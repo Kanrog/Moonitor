@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 
 const app = express();
-const port = 3000;
+const port = 3333;
 const bonjour = new Bonjour.Bonjour();
 
 app.use(cors());
@@ -14,7 +14,6 @@ app.use(express.json());
 
 const dbPath = path.join(__dirname, 'printers.json');
 
-// Load saved printers
 let savedPrinters = [];
 if (fs.existsSync(dbPath)) {
     savedPrinters = JSON.parse(fs.readFileSync(dbPath));
@@ -26,10 +25,9 @@ function saveDatabase() {
 
 let discoveredPrinters = {};
 
-// Scan for Moonraker/Mainsail/Fluidd mDNS services
 bonjour.find({ type: 'http' }, function (service) {
     if (service.name.toLowerCase().includes('moonraker') || service.name.toLowerCase().includes('mainsail') || service.name.toLowerCase().includes('fluidd')) {
-        const ip = service.addresses.find(addr => addr.includes('.')); // get IPv4
+        const ip = service.addresses.find(addr => addr.includes('.')); 
         if (ip) {
             discoveredPrinters[ip] = {
                 name: service.name,
@@ -40,7 +38,6 @@ bonjour.find({ type: 'http' }, function (service) {
     }
 });
 
-// Also explicitly search for _moonraker._tcp just in case
 bonjour.find({ type: 'moonraker' }, function (service) {
     const ip = service.addresses.find(addr => addr.includes('.'));
     if (ip) {
@@ -52,7 +49,6 @@ bonjour.find({ type: 'moonraker' }, function (service) {
     }
 });
 
-// API Endpoints
 app.get('/api/printers/scan', (req, res) => {
     res.json(Object.values(discoveredPrinters));
 });

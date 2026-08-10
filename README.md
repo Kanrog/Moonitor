@@ -29,7 +29,7 @@ Run this command via SSH on your target Debian/Ubuntu machine to automatically i
 curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh | bash
 ```
 
-Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3000`.
+Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3366`.
 
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
