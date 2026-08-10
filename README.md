@@ -31,5 +31,15 @@ curl -sSL [https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh](ht
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3000`.
 
+## Uninstall
+
+If you ever need to remove Moonitor from your host system, you can use the automated uninstall script. This will stop the background service, remove it from systemd, and delete the Moonitor project directory. It will safely leave Node.js and Git installed so it does not interfere with other services on your machine.
+
+Run this command via SSH to completely remove Moonitor:
+
+```bash
+curl -sSL [https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh](https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh) | bash
+```
+
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
