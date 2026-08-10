@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moonitor</title>
+    <style>
+        :root { --bg: #1e1e2e; --surface: #313244; --text: #cdd6f4; --accent: #89b4fa; --danger: #f38ba8; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        h1 { text-align: center; color: var(--accent); }
+        .header-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { background: var(--accent); color: var(--bg); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        button.danger { background: var(--danger); }
+        input { padding: 8px; border-radius: 4px; border: 1px solid var(--surface); background: var(--bg); color: var(--text); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+        .card { background: var(--surface); padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 10px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #45475a; padding-bottom: 10px; }
+        .card-header h3 { margin: 0; }
+        .webcam-container { width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .webcam-container img { width: 100%; height: 100%; object-fit: cover; }
+        .controls-row { display: flex; gap: 5px; flex-wrap: wrap; }
+        .controls-row input { flex: 1; min-width: 60px; }
+        .controls-row button { flex: 1; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; background: #45475a; }
+        .remove-btn { background: transparent; color: var(--danger); padding: 4px; flex: none; }
+    </style>
+</head>
+<body>
+    <h1>Moonitor</h1>
+    
+    <div class="header-controls">
+        <input type="text" id="manual-name" placeholder="Printer Name">
+        <input type="text" id="manual-ip" placeholder="IP Address">
+        <button onclick="addManualPrinter()">Add Printer</button>
+        <button onclick="scanNetwork()">Scan Local Network</button>
+    </div>
+
+    <div id="scan-results" class="header-controls" style="display: none;"></div>
+
+    <div class="grid" id="printer-grid"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
