@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 
 const app = express();
-const port = 3333;
+const port = 3366;
 const bonjour = new Bonjour.Bonjour();
 
 app.use(cors());
