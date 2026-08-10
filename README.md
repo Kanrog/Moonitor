@@ -26,8 +26,7 @@ You can install Moonitor directly on one of your existing Klipper hosts (like a 
 Run this command via SSH on your target Debian/Ubuntu machine to automatically install Node.js, download Moonitor, and set it up as a background service:
 
 ```bash
-GH="raw.githubusercontent.com"
-curl -sSL "https://$GH/Kanrog/Moonitor/main/install.sh" | bash
+curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh | bash
 ```
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3000`.
@@ -42,6 +41,5 @@ If you ever need to remove Moonitor from your host system, you can use the autom
 Run this command via SSH to completely remove Moonitor:
 
 ```bash
-GH="raw.githubusercontent.com"
-curl -sSL "https://$GH/Kanrog/Moonitor/main/uninstall.sh" | bash
+curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh | bash
 ```
