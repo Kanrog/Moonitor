@@ -26,10 +26,14 @@ You can install Moonitor directly on one of your existing Klipper hosts (like a 
 Run this command via SSH on your target Debian/Ubuntu machine to automatically install Node.js, download Moonitor, and set it up as a background service:
 
 ```bash
-curl -sSL [https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh](https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh) | bash
+GH="raw.githubusercontent.com"
+curl -sSL "https://$GH/Kanrog/Moonitor/main/install.sh" | bash
 ```
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3000`.
+
+**Note on Moonraker CORS:**
+Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
 ## Uninstall
 
@@ -38,8 +42,6 @@ If you ever need to remove Moonitor from your host system, you can use the autom
 Run this command via SSH to completely remove Moonitor:
 
 ```bash
-curl -sSL [https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh](https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh) | bash
+GH="raw.githubusercontent.com"
+curl -sSL "https://$GH/Kanrog/Moonitor/main/uninstall.sh" | bash
 ```
-
-**Note on Moonraker CORS:**
-Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
