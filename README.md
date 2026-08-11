@@ -31,6 +31,9 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 * **Persistent Storage:** Saves your fleet configuration locally so your dashboard is exactly how you left it after a reboot.
 * **Flexible Camera Controls:** Enable, disable, rotate (0°, 90°, 180°, 270°), and horizontally mirror your webcam feeds directly from the printer settings to fit any enclosure orientation.
 
+### Creality K2 / K2 Plus Camera Note
+The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
+
 ## Architecture
 
 * **Backend:** A tiny Node.js server that handles local network scanning (mDNS/Bonjour) and serves the static UI files.
@@ -60,9 +63,6 @@ Once installed, Moonitor will run in its own dedicated window without browser ta
 
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
-
-### Creality K2 / K2 Plus Camera Note
-The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
 
 ## Updating Moonitor
 
