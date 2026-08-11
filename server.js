@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const dgram = require('dgram');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,16 +29,57 @@ function savePrinters(printers) {
     fs.writeFileSync(DB_FILE, JSON.stringify(printers, null, 2));
 }
 
+function getLocalSubnetBase() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const net of interfaces[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                const parts = net.address.split('.');
+                return `${parts[0]}.${parts[1]}.${parts[2]}.`;
+            }
+        }
+    }
+    return '192.168.0.';
+}
+
+// Helper to query Moonraker for its actual hostname/printer name
+async function fetchMoonrakerName(ip) {
+    return new Promise((resolve) => {
+        const reqTimer = setTimeout(() => resolve(`Printer (${ip})`), 400);
+        http.get(`http://${ip}:7125/printer/info`, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                clearTimeout(reqTimer);
+                try {
+                    const json = JSON.parse(data);
+                    const hostname = json?.result?.hostname;
+                    resolve(hostname ? hostname : `Printer (${ip})`);
+                } catch (e) {
+                    resolve(`Printer (${ip})`);
+                }
+            });
+        }).on('error', () => {
+            clearTimeout(reqTimer);
+            resolve(`Printer (${ip})`);
+        });
+    });
+}
+
 app.get('/api/printers', (req, res) => {
     res.json(getPrinters());
 });
 
-app.post('/api/printers', (req, res) => {
-    const { name, ip, port, webcamPort, webcamPath, cameraEnabled, rotation, mirror } = req.body;
+app.post('/api/printers', async (req, res) => {
+    let { name, ip, port, webcamPort, webcamPath, cameraEnabled, rotation, mirror } = req.body;
     const printers = getPrinters();
     
+    if (!name || name.startsWith('Printer (')) {
+        name = await fetchMoonrakerName(ip);
+    }
+
     const newPrinter = {
-        name: name || `Printer (${ip})`,
+        name,
         ip,
         port: port || 7125,
         webcamPort: webcamPort || 8080,
@@ -87,66 +129,48 @@ app.delete('/api/printers/:ip', (req, res) => {
 });
 
 app.get('/api/printers/scan', (req, res) => {
-    const message = Buffer.from('M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: "ssdp:discover"\r\nMX: 2\r\nST: urn:schemas-upnp-org:device:Basic:1\r\n\r\n');
-    const client = dgram.createSocket('udp4');
-    let foundDevices = [];
+    const baseSubnet = getLocalSubnetBase();
+    const existing = getPrinters();
+    const existingIps = new Set(existing.map(p => p.ip));
 
-    client.on('message', (msg, rinfo) => {
-        const response = msg.toString();
-        if (response.includes('Moonraker') || response.includes('Klipper') || rinfo.address) {
-            if (!foundDevices.some(d => d.ip === rinfo.address)) {
-                foundDevices.push({ name: `Printer (${rinfo.address})`, ip: rinfo.address, port: 7125 });
-            }
-        }
-    });
+    // Fire parallel requests across the entire subnet simultaneously for maximum reliability and speed
+    const promises = [];
+    for (let i = 1; i < 255; i++) {
+        const testIp = baseSubnet + i;
+        if (existingIps.has(testIp)) continue;
 
-    client.bind(() => {
-        try {
-            client.setBroadcast(true);
-            client.send(message, 0, message.length, 1900, '239.255.255.250');
-        } catch (e) {}
-    });
-
-    setTimeout(async () => {
-        client.close();
-        const subnetPrinters = [...foundDevices];
-        const baseIp = '192.168.0.';
-        
-        const existing = getPrinters();
-        const existingIps = new Set(existing.map(p => p.ip));
-
-        const promises = [];
-        for (let i = 1; i < 255; i++) {
-            const testIp = baseIp + i;
-            if (existingIps.has(testIp) || subnetPrinters.some(p => p.ip === testIp)) continue;
-
-            promises.push(
-                new Promise((resolve) => {
-                    const reqTimer = setTimeout(() => resolve(null), 300);
-                    http.get(`http://${testIp}:7125/printer/info`, (res) => {
+        promises.push(
+            new Promise((resolve) => {
+                const reqTimer = setTimeout(() => resolve(null), 400);
+                http.get(`http://${testIp}:7125/printer/info`, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
                         clearTimeout(reqTimer);
                         if (res.statusCode === 200) {
-                            resolve({ name: `Printer (${testIp})`, ip: testIp, port: 7125 });
+                            try {
+                                const json = JSON.parse(data);
+                                const hostname = json?.result?.hostname || `Printer (${testIp})`;
+                                resolve({ name: hostname, ip: testIp, port: 7125 });
+                            } catch (e) {
+                                resolve({ name: `Printer (${testIp})`, ip: testIp, port: 7125 });
+                            }
                         } else {
                             resolve(null);
                         }
-                    }).on('error', () => {
-                        clearTimeout(reqTimer);
-                        resolve(null);
                     });
-                })
-            );
-        }
+                }).on('error', () => {
+                    clearTimeout(reqTimer);
+                    resolve(null);
+                });
+            })
+        );
+    }
 
-        const results = await Promise.all(promises);
-        results.forEach(p => {
-            if (p && !subnetPrinters.some(existingP => existingP.ip === p.ip)) {
-                subnetPrinters.push(p);
-            }
-        });
-
-        res.json(subnetPrinters);
-    }, 2500);
+    Promise.all(promises).then(results => {
+        const foundPrinters = results.filter(p => p !== null);
+        res.json(foundPrinters);
+    });
 });
 
 server.listen(PORT, () => {
