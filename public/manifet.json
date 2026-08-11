@@ -1,0 +1,17 @@
+{
+  "name": "Moonitor",
+  "short_name": "Moonitor",
+  "description": "Zero-latency fleet dashboard for Klipper and Moonraker.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "icons": [
+    {
+      "src": "images/moonitor-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

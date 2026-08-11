@@ -1,3 +1,10 @@
+// Register Service Worker for PWA Installation
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.error('Service Worker registration failed:', err));
+    });
+}
+
 let sockets = {};
 let foundDiscoveredPrinters = [];
 
@@ -196,7 +203,6 @@ function renderPrinters(printers) {
         const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
         const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
 
-        // Safely escape printer name for inline onclick string passing
         const safeName = printer.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
         card.innerHTML = `
