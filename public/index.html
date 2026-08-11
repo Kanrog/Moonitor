@@ -28,10 +28,24 @@
             overflow: hidden;
         }
 
+        .header-title {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
         h1 { 
             text-align: center; 
             color: var(--accent); 
-            margin: 0 0 10px 0;
+            margin: 0;
             font-size: 1.4rem;
         }
 
@@ -198,7 +212,6 @@
             z-index: 1;
         }
 
-        /* Top Bar layered above the overlay (z-index: 4) so buttons are clickable */
         .card-top-bar {
             position: absolute;
             top: 0;
@@ -244,7 +257,6 @@
         .icon-btn:hover { background: var(--surface); color: #fff; }
         .remove-btn:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-        /* Overlay sits at z-index: 2, below the top bar */
         .card-overlay {
             position: absolute;
             top: 0;
@@ -323,7 +335,10 @@
     </style>
 </head>
 <body>
-    <h1>Moonitor</h1>
+    <div class="header-title">
+        <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
+        <h1>Moonitor</h1>
+    </div>
     
     <div class="header-controls">
         <input type="text" id="manual-name" placeholder="Printer Name">
