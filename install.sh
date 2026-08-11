@@ -63,7 +63,7 @@ sudo systemctl start moonitor.service
 LOCAL_IP=$(hostname -I | awk '{print $1}')
 
 echo -e "\e[1;32mInstallation Complete!\e[0m"
-echo -e "You can now access your Moonitor at: \e[1;36mhttp://$LOCAL_IP:3333\e[0m"
+echo -e "You can now access your Moonitor at: \e[1;36mhttp://$LOCAL_IP:3366\e[0m"
 echo ""
 echo "To view system logs for the dashboard, run:"
 echo "  sudo journalctl -u moonitor.service -f"

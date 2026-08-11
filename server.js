@@ -4,6 +4,7 @@ const Bonjour = require('bonjour-service');
 const cors = require('cors');
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
 
 const app = express();
 const port = 3366;
@@ -26,7 +27,7 @@ function saveDatabase() {
 
 let discoveredPrinters = {};
 
-// mDNS Scanning (Fallback 1)
+// mDNS Discovery
 bonjour.find({ type: 'http' }, function (service) {
     if (service.name.toLowerCase().includes('moonraker') || service.name.toLowerCase().includes('mainsail') || service.name.toLowerCase().includes('fluidd')) {
         const ip = service.addresses.find(addr => addr.includes('.')); 
@@ -40,7 +41,6 @@ bonjour.find({ type: 'http' }, function (service) {
     }
 });
 
-// mDNS Scanning (Fallback 2)
 bonjour.find({ type: 'moonraker' }, function (service) {
     const ip = service.addresses.find(addr => addr.includes('.'));
     if (ip) {
@@ -52,10 +52,54 @@ bonjour.find({ type: 'moonraker' }, function (service) {
     }
 });
 
-// Active Subnet Probing
+// Helper to clean IP string
+function getSubnetFromIP(ipStr) {
+    if (!ipStr) return null;
+    const cleanIP = ipStr.replace(/^.*:/, ''); 
+    const parts = cleanIP.split('.');
+    if (parts.length === 4 && parts[0] !== '127') {
+        return parts.slice(0, 3).join('.');
+    }
+    return null;
+}
+
+// Detect true physical subnets (bypassing docker/virtual bridges)
+function getCandidateSubnets(req) {
+    const subnets = new Set();
+
+    // 1. Get subnet from the client's HTTP request
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientSubnet = getSubnetFromIP(clientIp);
+    if (clientSubnet) subnets.add(clientSubnet);
+
+    // 2. Scan physical system interfaces (ignoring docker/bridges)
+    const networkInterfaces = os.networkInterfaces();
+    const ignoreIfaces = ['lo', 'docker', 'br-', 'veth', 'tailscale', 'tun', 'tap', 'vbox'];
+
+    for (const ifaceName of Object.keys(networkInterfaces)) {
+        const isVirtual = ignoreIfaces.some(ign => ifaceName.toLowerCase().startsWith(ign));
+        if (isVirtual) continue;
+
+        for (const net of networkInterfaces[ifaceName]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                const sub = getSubnetFromIP(net.address);
+                if (sub) subnets.add(sub);
+            }
+        }
+    }
+
+    if (subnets.size === 0) {
+        subnets.add('192.168.0');
+        subnets.add('192.168.1');
+    }
+
+    return Array.from(subnets);
+}
+
+// Fast HTTP probe on Moonraker default port 7125
 function probeMoonrakerIP(ip) {
     return new Promise((resolve) => {
-        const req = http.get(`http://${ip}:7125/printer/info`, { timeout: 800 }, (res) => {
+        const req = http.get(`http://${ip}:7125/printer/info`, { timeout: 600 }, (res) => {
             let body = '';
             res.on('data', chunk => body += chunk);
             res.on('end', () => {
@@ -80,36 +124,26 @@ function probeMoonrakerIP(ip) {
 // API Endpoints
 app.get('/api/printers/scan', async (req, res) => {
     const results = { ...discoveredPrinters };
-    
-    const networkInterfaces = require('os').networkInterfaces();
-    let localSubnet = '192.168.0';
-    
-    // Auto-detect the host's subnet
-    for (const name of Object.keys(networkInterfaces)) {
-        for (const net of networkInterfaces[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                localSubnet = net.address.split('.').slice(0, 3).join('.');
-                break;
-            }
-        }
-    }
+    const subnets = getCandidateSubnets(req);
 
-    // Active batched IP sweep
-    const BATCH_SIZE = 15;
-    for (let i = 1; i <= 254; i += BATCH_SIZE) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + BATCH_SIZE, 255); j++) {
-            const ip = `${localSubnet}.${j}`;
-            if (!results[ip]) { 
-                batch.push(probeMoonrakerIP(ip));
+    // Batch scan candidate subnets
+    const BATCH_SIZE = 20;
+    for (const subnet of subnets) {
+        for (let i = 1; i <= 254; i += BATCH_SIZE) {
+            const batch = [];
+            for (let j = i; j < Math.min(i + BATCH_SIZE, 255); j++) {
+                const ip = `${subnet}.${j}`;
+                if (!results[ip]) {
+                    batch.push(probeMoonrakerIP(ip));
+                }
             }
+            const batchResults = await Promise.all(batch);
+            batchResults.forEach(r => {
+                if (r.found) {
+                    results[r.ip] = { name: r.name, ip: r.ip, port: r.port };
+                }
+            });
         }
-        const batchResults = await Promise.all(batch);
-        batchResults.forEach(r => {
-            if (r.found) {
-                results[r.ip] = { name: r.name, ip: r.ip, port: r.port };
-            }
-        });
     }
 
     res.json(Object.values(results));

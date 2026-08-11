@@ -13,7 +13,6 @@ async function addManualPrinter() {
     const ip = document.getElementById('manual-ip').value.trim();
     if (!ip) return alert("Please enter an IP address.");
 
-    // Automatically pull hostname if left blank
     if (!name) {
         name = `Printer (${ip})`;
         try {
@@ -23,7 +22,7 @@ async function addManualPrinter() {
                 name = data?.result?.hostname || name;
             }
         } catch (e) {
-            // Fails silently if CORS blocks it, defaults to IP
+            // Fails silently if CORS blocked, uses IP default
         }
     }
 
@@ -39,35 +38,48 @@ async function addManualPrinter() {
 }
 
 async function scanNetwork() {
+    const scanBtn = document.getElementById('scan-btn');
     const scanDiv = document.getElementById('scan-results');
+    const searchlight = document.getElementById('searchlight');
+    
+    scanBtn.disabled = true;
+    searchlight.style.display = 'block';
     scanDiv.style.display = 'flex';
-    scanDiv.innerHTML = '<span>Scouting local network... this may take up to 15 seconds.</span>';
+    scanDiv.innerHTML = '<span class="pulse-dot"></span> Scouting local subnets for Moonraker endpoints...';
     
-    const res = await fetch('/api/printers/scan');
-    const discovered = await res.json();
-    
-    scanDiv.innerHTML = '';
-    
-    if (discovered.length === 0) {
-        scanDiv.innerHTML = '<span>No new printers found on network.</span>';
-        setTimeout(() => scanDiv.style.display = 'none', 3000);
-        return;
-    }
-
-    discovered.forEach(p => {
-        const btn = document.createElement('button');
-        btn.textContent = `Add ${p.name} (${p.ip})`;
-        btn.onclick = async () => {
-            await fetch('/api/printers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: p.name, ip: p.ip, port: p.port, webcamPort: 8080 })
+    try {
+        const res = await fetch('/api/printers/scan');
+        const discovered = await res.json();
+        
+        scanDiv.innerHTML = '';
+        
+        if (discovered.length === 0) {
+            scanDiv.innerHTML = '<span>No new printers found on network.</span>';
+            setTimeout(() => {
+                scanDiv.style.display = 'none';
+            }, 4000);
+        } else {
+            discovered.forEach(p => {
+                const btn = document.createElement('button');
+                btn.textContent = `Add ${p.name} (${p.ip})`;
+                btn.onclick = async () => {
+                    await fetch('/api/printers', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: p.name, ip: p.ip, port: p.port, webcamPort: 8080 })
+                    });
+                    scanDiv.style.display = 'none';
+                    loadPrinters();
+                };
+                scanDiv.appendChild(btn);
             });
-            scanDiv.style.display = 'none';
-            loadPrinters();
-        };
-        scanDiv.appendChild(btn);
-    });
+        }
+    } catch (e) {
+        scanDiv.innerHTML = '<span style="color:var(--danger)">Scan failed to reach backend server.</span>';
+    } finally {
+        scanBtn.disabled = false;
+        searchlight.style.display = 'none';
+    }
 }
 
 async function removePrinter(ip) {
@@ -153,9 +165,9 @@ async function checkCorsStatus(ip) {
     } catch (e) {
         try {
             await fetch(`http://${ip}:7125/printer/info`, { mode: 'no-cors' });
-            return true; // Pinged successfully but standard fetch failed = CORS
+            return true; 
         } catch (pingErr) {
-            return false; // Completely offline
+            return false; 
         }
     }
 }
@@ -172,7 +184,7 @@ function connectWebSocket(printer) {
         const statusEl = document.getElementById(`status-${printer.ip}`);
         if(statusEl) {
             statusEl.textContent = "Connected";
-            statusEl.style.background = "#10b981"; // Success green
+            statusEl.style.background = "var(--success)";
         }
         
         ws.send(JSON.stringify({
