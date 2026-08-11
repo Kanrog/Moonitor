@@ -69,7 +69,6 @@
             font-size: 0.85rem;
         }
 
-        /* Searchlight Scan Animation */
         .searchlight-track {
             display: none;
             width: 100%;
@@ -123,7 +122,6 @@
             flex-wrap: wrap;
         }
 
-        /* Scan Results Container */
         #scan-results {
             display: none;
             flex-direction: column;
@@ -156,7 +154,6 @@
             flex: 1;
         }
 
-        /* Strict 3x2 Grid Layout for 6 Printers */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -175,7 +172,6 @@
             .grid { grid-template-columns: 1fr; grid-template-rows: auto; }
         }
 
-        /* Camera-First Card Design */
         .card { 
             background: #000; 
             border-radius: 6px; 
@@ -199,7 +195,6 @@
             z-index: 1;
         }
 
-        /* Always-on Top Bar (Name & Status Badge) */
         .card-top-bar {
             position: absolute;
             top: 0;
@@ -211,12 +206,10 @@
             justify-content: space-between;
             align-items: center;
             z-index: 2;
-            pointer-events: none; /* Let clicks pass through to video if needed */
+            pointer-events: none;
         }
 
-        .card-top-bar > * {
-            pointer-events: auto;
-        }
+        .card-top-bar > * { pointer-events: auto; }
 
         .card-top-bar h3 { 
             margin: 0; 
@@ -238,18 +231,18 @@
             text-transform: uppercase;
         }
 
-        .remove-btn { 
+        .icon-btn { 
             background: rgba(0,0,0,0.5); 
-            color: var(--danger); 
-            border: 1px solid var(--danger);
+            color: var(--text); 
+            border: 1px solid #585b70;
             border-radius: 4px;
             padding: 2px 6px; 
             font-size: 0.75rem;
             cursor: pointer;
         }
-        .remove-btn:hover { background: var(--danger); color: #fff; }
+        .icon-btn:hover { background: var(--surface); color: #fff; }
+        .remove-btn:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-        /* Hover Overlay Controls Panel */
         .card-overlay {
             position: absolute;
             top: 0;
@@ -267,7 +260,7 @@
             padding: 15px;
             gap: 8px;
             box-sizing: border-box;
-            pointer-events: none; /* Hidden from clicks until hovered */
+            pointer-events: none;
         }
 
         .card:hover .card-overlay {
@@ -304,6 +297,28 @@
             border-radius: 4px;
             border: 1px solid var(--surface);
         }
+
+        /* Edit Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-card h3 { margin: 0 0 5px 0; color: var(--accent); }
     </style>
 </head>
 <body>
@@ -313,7 +328,7 @@
         <input type="text" id="manual-name" placeholder="Printer Name">
         <input type="text" id="manual-ip" placeholder="IP Address">
         <button onclick="addManualPrinter()">Add Printer</button>
-        <button id="scan-btn" onclick="scanNetwork()">Scan Local Network</button>
+        <button onclick="scanNetwork()" id="scan-btn">Scan Local Network</button>
     </div>
 
     <div class="searchlight-track" id="searchlight">
@@ -328,6 +343,22 @@
     </div>
 
     <div class="grid" id="printer-grid"></div>
+
+    <!-- Edit Printer Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-card">
+            <h3>Edit Printer</h3>
+            <input type="hidden" id="edit-old-ip">
+            <label style="font-size: 0.85rem;">Printer Name:</label>
+            <input type="text" id="edit-name" placeholder="Name">
+            <label style="font-size: 0.85rem;">IP Address:</label>
+            <input type="text" id="edit-ip" placeholder="IP Address">
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button onclick="savePrinterEdit()" style="flex: 1;">Save</button>
+                <button onclick="closeEditModal()" style="flex: 1; background: #45475a; color: #fff;">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

@@ -120,6 +120,42 @@ async function removePrinter(ip) {
     loadPrinters();
 }
 
+function openEditModal(ip, currentName) {
+    document.getElementById('edit-old-ip').value = ip;
+    document.getElementById('edit-name').value = currentName;
+    document.getElementById('edit-ip').value = ip;
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+async function savePrinterEdit() {
+    const oldIp = document.getElementById('edit-old-ip').value;
+    const name = document.getElementById('edit-name').value.trim();
+    const ip = document.getElementById('edit-ip').value.trim();
+
+    if (!ip) {
+        alert("IP address cannot be empty.");
+        return;
+    }
+
+    if (sockets[oldIp]) {
+        sockets[oldIp].close();
+        delete sockets[oldIp];
+    }
+
+    await fetch(`/api/printers/${oldIp}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, ip })
+    });
+
+    closeEditModal();
+    loadPrinters();
+}
+
 function renderPrinters(printers) {
     const grid = document.getElementById('printer-grid');
     grid.innerHTML = '';
@@ -137,9 +173,10 @@ function renderPrinters(printers) {
 
             <div class="card-top-bar">
                 <h3>${printer.name}</h3>
-                <div style="display: flex; gap: 6px; align-items: center;">
+                <div style="display: flex; gap: 4px; align-items: center;">
                     <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <button class="remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
+                    <button class="icon-btn" onclick="openEditModal('${printer.ip}', '${printer.name.replace(/'/g, "\\'")}')" title="Edit Printer">⚙️</button>
+                    <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
                 </div>
             </div>
 

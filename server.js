@@ -131,6 +131,24 @@ app.post('/api/printers', (req, res) => {
     res.json({ success: true, printers: savedPrinters });
 });
 
+// Update an existing printer's name or IP
+app.put('/api/printers/:oldIp', (req, res) => {
+    const oldIp = req.params.oldIp;
+    const { name, ip, webcamPort, webcamPath } = req.body;
+    
+    const printer = savedPrinters.find(p => p.ip === oldIp);
+    if (printer) {
+        if (name) printer.name = name;
+        if (ip) printer.ip = ip;
+        if (webcamPort) printer.webcamPort = webcamPort;
+        if (webcamPath) printer.webcamPath = webcamPath;
+        saveDatabase();
+        res.json({ success: true, printers: savedPrinters });
+    } else {
+        res.status(404).json({ success: false, error: "Printer not found" });
+    }
+});
+
 app.delete('/api/printers/:ip', (req, res) => {
     savedPrinters = savedPrinters.filter(p => p.ip !== req.params.ip);
     saveDatabase();
