@@ -19,20 +19,25 @@
             background: var(--bg); 
             color: var(--text); 
             margin: 0; 
-            padding: 20px; 
+            padding: 15px; 
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
         h1 { 
             text-align: center; 
             color: var(--accent); 
-            margin-bottom: 20px;
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
         }
 
         .header-controls { 
             display: flex; 
             justify-content: center; 
             gap: 10px; 
-            margin-bottom: 15px; 
+            margin-bottom: 10px; 
             flex-wrap: wrap; 
             align-items: center;
         }
@@ -41,10 +46,11 @@
             background: var(--accent); 
             color: var(--bg); 
             border: none; 
-            padding: 8px 16px; 
+            padding: 6px 14px; 
             border-radius: 4px; 
             cursor: pointer; 
             font-weight: bold; 
+            font-size: 0.9rem;
             transition: opacity 0.2s;
         }
 
@@ -53,23 +59,24 @@
         button.danger { background: var(--danger); }
 
         input { 
-            padding: 8px; 
+            padding: 6px 10px; 
             border-radius: 4px; 
             border: 1px solid var(--surface); 
             background: var(--bg); 
             color: var(--text); 
+            font-size: 0.9rem;
         }
 
         /* Searchlight Scan Animation */
         .searchlight-track {
             display: none;
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             height: 4px;
             background: var(--surface);
             border-radius: 2px;
             overflow: hidden;
-            margin: 0 auto 15px auto;
+            margin: 0 auto 10px auto;
             position: relative;
         }
 
@@ -105,7 +112,7 @@
         }
 
         .scan-status {
-            font-size: 0.9em;
+            font-size: 0.85rem;
             color: var(--accent);
             display: flex;
             align-items: center;
@@ -119,13 +126,13 @@
             display: none;
             flex-direction: column;
             width: 100%;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
+            max-width: 450px;
+            margin: 0 auto 15px auto;
             background: var(--surface);
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            gap: 10px;
+            gap: 8px;
         }
 
         .scan-list-item {
@@ -133,33 +140,50 @@
             align-items: center;
             justify-content: space-between;
             background: var(--bg);
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
-            font-size: 0.9em;
+            font-size: 0.85rem;
         }
 
         .scan-list-item label {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
             flex: 1;
         }
 
+        /* Strict 3-column, 2-row scaling layout for 6 printers */
         .grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
-            gap: 20px; 
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 12px; 
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-bottom: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
         }
 
         .card { 
             background: var(--surface); 
-            padding: 15px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            padding: 10px 12px; 
+            border-radius: 6px; 
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3); 
             display: flex; 
             flex-direction: column; 
-            gap: 10px; 
+            gap: 6px; 
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .card-header { 
@@ -167,20 +191,27 @@
             justify-content: space-between; 
             align-items: center; 
             border-bottom: 1px solid #45475a; 
-            padding-bottom: 10px; 
+            padding-bottom: 6px; 
         }
 
-        .card-header h3 { margin: 0; }
+        .card-header h3 { 
+            margin: 0; 
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .webcam-container { 
             width: 100%; 
-            aspect-ratio: 4/3; 
+            aspect-ratio: 16/9; 
             background: #000; 
             border-radius: 4px; 
             overflow: hidden; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
+            max-height: 130px;
         }
 
         .webcam-container img { 
@@ -191,17 +222,27 @@
 
         .controls-row { 
             display: flex; 
-            gap: 5px; 
+            gap: 4px; 
             flex-wrap: wrap; 
         }
 
-        .controls-row input { flex: 1; min-width: 60px; }
-        .controls-row button { flex: 1; }
+        .controls-row input { 
+            flex: 1; 
+            min-width: 50px; 
+            padding: 4px 6px;
+            font-size: 0.8rem;
+        }
+
+        .controls-row button { 
+            flex: 1; 
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
 
         .status-badge { 
-            padding: 4px 8px; 
-            border-radius: 12px; 
-            font-size: 0.8em; 
+            padding: 2px 6px; 
+            border-radius: 10px; 
+            font-size: 0.75rem; 
             background: #45475a; 
             color: #fff;
             font-weight: bold;
@@ -210,7 +251,8 @@
         .remove-btn { 
             background: transparent; 
             color: var(--danger); 
-            padding: 4px; 
+            padding: 2px 6px; 
+            font-size: 0.8rem;
             flex: none; 
         }
     </style>
@@ -219,7 +261,7 @@
     <h1>Moonitor</h1>
     
     <div class="header-controls">
-        <input type="text" id="manual-name" placeholder="Printer Name (Auto-fills)">
+        <input type="text" id="manual-name" placeholder="Printer Name">
         <input type="text" id="manual-ip" placeholder="IP Address">
         <button onclick="addManualPrinter()">Add Printer</button>
         <button id="scan-btn" onclick="scanNetwork()">Scan Local Network</button>
@@ -229,11 +271,11 @@
         <div class="searchlight-beam"></div>
     </div>
 
-    <div id="scan-status-text" class="scan-status" style="margin-bottom: 10px;"></div>
+    <div id="scan-status-text" class="scan-status" style="margin-bottom: 5px;"></div>
 
     <div id="scan-results">
-        <div id="scan-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        <button onclick="addSelectedPrinters()" style="width: 100%; margin-top: 5px;">Add Selected Printers</button>
+        <div id="scan-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;"></div>
+        <button onclick="addSelectedPrinters()" style="width: 100%; padding: 6px; font-size: 0.85rem;">Add Selected Printers</button>
     </div>
 
     <div class="grid" id="printer-grid"></div>
