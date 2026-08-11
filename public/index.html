@@ -60,13 +60,14 @@
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.danger { background: var(--danger); color: #fff; }
 
-        input { 
+        input, select { 
             padding: 6px 10px; 
             border-radius: 4px; 
             border: 1px solid var(--surface); 
             background: var(--bg); 
             color: var(--text); 
-            font-size: 0.85rem;
+            font-size: 0.80rem;
+            outline: none;
         }
 
         .searchlight-track {
@@ -154,7 +155,6 @@
             flex: 1;
         }
 
-        /* Grid Layout: 3 Columns, allowing natural wrapping rows without overlaps */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -165,21 +165,14 @@
             align-content: start;
         }
 
-        /* Half-Screen Desktop (Width <= 1600px): Switches to 2 Columns (2x3 grid layout) */
         @media (max-width: 1600px) {
-            .grid { 
-                grid-template-columns: repeat(2, 1fr); 
-            }
+            .grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        /* Mobile / Small Screens: Single Column */
         @media (max-width: 768px) {
-            .grid { 
-                grid-template-columns: 1fr; 
-            }
+            .grid { grid-template-columns: 1fr; }
         }
 
-        /* Card Container with strict 16:9 proportions */
         .card { 
             background: #000; 
             border-radius: 6px; 
@@ -280,7 +273,7 @@
             flex-wrap: wrap; 
         }
 
-        .controls-row input { 
+        .controls-row input, .controls-row select { 
             flex: 1; 
             min-width: 50px; 
             padding: 4px 6px;

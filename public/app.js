@@ -116,7 +116,7 @@ async function removePrinter(ip) {
         sockets[ip].close();
         delete sockets[ip];
     }
-    await fetch(`/api/printers/${ip}`, { method: 'DELETE' });
+    await fetch(`/api/printers/${ip}`, { method: 'DELETE' }];
     loadPrinters();
 }
 
@@ -156,6 +156,36 @@ async function savePrinterEdit() {
     loadPrinters();
 }
 
+// Fetch macros dynamically from Moonraker and populate dropdown
+async function fetchMacros(ip) {
+    const selectEl = document.getElementById(`macro-select-${ip}`);
+    if (!selectEl || selectEl.options.length > 1) return; // Prevent reloading if already populated
+
+    try {
+        const res = await fetch(`http://${ip}:7125/printer/objects/list`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const objects = data?.result?.objects || [];
+        // Filter objects starting with "gcode_macro " and ignore those containing an underscore after the prefix
+        const macros = objects
+            .filter(obj => obj.startsWith('gcode_macro '))
+            .map(obj => obj.replace('gcode_macro ', ''))
+            .filter(name => !name.startsWith('_'))
+            .sort();
+
+        selectEl.innerHTML = '<option value="">Select Macro...</option>';
+        macros.forEach(macro => {
+            const opt = document.createElement('option');
+            opt.value = macro;
+            opt.textContent = macro;
+            selectEl.appendChild(opt);
+        });
+    } catch (e) {
+        console.error(`Failed to fetch macros for ${ip}:`, e);
+    }
+}
+
 function renderPrinters(printers) {
     const grid = document.getElementById('printer-grid');
     grid.innerHTML = '';
@@ -180,7 +210,7 @@ function renderPrinters(printers) {
                 </div>
             </div>
 
-            <div class="card-overlay">
+            <div class="card-overlay" onmouseenter="fetchMacros('${printer.ip}')">
                 <div class="controls-row">
                     <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
                     <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
@@ -213,8 +243,10 @@ function renderPrinters(printers) {
                 </div>
 
                 <div class="controls-row">
-                    <input type="text" id="macro-${printer.ip}" placeholder="Macro (e.g. LOAD_FILAMENT)">
-                    <button onclick="runMacro('${printer.ip}')">Run</button>
+                    <select id="macro-select-${printer.ip}">
+                        <option value="">Select Macro...</option>
+                    </select>
+                    <button onclick="runSelectedMacro('${printer.ip}')">Run</button>
                 </div>
                 
                 <div class="temp-footer">
@@ -330,7 +362,12 @@ function setTemp(ip, heater, inputId) {
     sendGcode(ip, `SET_HEATER_TEMPERATURE HEATER=${heater} TARGET=${temp}`);
 }
 
-function runMacro(ip) {
-    const macro = document.getElementById(`macro-${ip}`).value.trim();
-    if (macro) sendGcode(ip, macro);
+function runSelectedMacro(ip) {
+    const selectEl = document.getElementById(`macro-select-${ip}`);
+    const macro = selectEl.value;
+    if (macro) {
+        sendGcode(ip, macro);
+    } else {
+        alert("Please select a macro from the dropdown first.");
+    }
 }
