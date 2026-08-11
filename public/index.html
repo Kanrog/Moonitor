@@ -154,6 +154,7 @@
             flex: 1;
         }
 
+        /* Default Full-Screen: 3 Columns, 2 Rows (6 Printers) */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -164,12 +165,19 @@
             overflow: hidden;
         }
 
-        @media (max-width: 1200px) {
-            .grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+        /* Half-Screen / Narrower Desktop: 2 Columns, 3 Rows (6 Printers in a 2x3 grid) */
+        @media (max-width: 1400px) {
+            .grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                grid-template-rows: repeat(3, minmax(0, 1fr)); 
+            }
         }
 
         @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+            .grid { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: auto; 
+            }
         }
 
         .card { 
@@ -298,7 +306,6 @@
             border: 1px solid var(--surface);
         }
 
-        /* Edit Modal Overlay */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -344,7 +351,6 @@
 
     <div class="grid" id="printer-grid"></div>
 
-    <!-- Edit Printer Modal -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal-card">
             <h3>Edit Printer</h3>
