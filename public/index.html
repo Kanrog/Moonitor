@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moonitor</title>
     
-    <!-- PWA & Favicon Tags -->
     <link rel="icon" href="images/moonitor-logo.png" type="image/png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1e2e">
@@ -370,10 +369,29 @@
         <div class="modal-card">
             <h3>Edit Printer</h3>
             <input type="hidden" id="edit-old-ip">
+            
             <label style="font-size: 0.85rem;">Printer Name:</label>
             <input type="text" id="edit-name" placeholder="Name">
+            
             <label style="font-size: 0.85rem;">IP Address:</label>
             <input type="text" id="edit-ip" placeholder="IP Address">
+
+            <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px;">
+                <input type="checkbox" id="edit-camera-enabled"> Enable Camera Feed
+            </label>
+
+            <label style="font-size: 0.85rem;">Camera Rotation:</label>
+            <select id="edit-rotation">
+                <option value="0">0° (Normal)</option>
+                <option value="90">90° Clockwise</option>
+                <option value="180">180° Upside Down</option>
+                <option value="270">270° Clockwise</option>
+            </select>
+
+            <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px;">
+                <input type="checkbox" id="edit-mirror"> Mirror Camera (Horizontally)
+            </label>
+
             <div style="display: flex; gap: 8px; margin-top: 10px;">
                 <button onclick="savePrinterEdit()" style="flex: 1;">Save</button>
                 <button onclick="closeEditModal()" style="flex: 1; background: #45475a; color: #fff;">Cancel</button>

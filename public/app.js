@@ -1,4 +1,3 @@
-// Register Service Worker for PWA Installation
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(err => console.error('Service Worker registration failed:', err));
@@ -35,7 +34,16 @@ async function addManualPrinter() {
     await fetch('/api/printers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, ip, port: 7125, webcamPort: 8080, webcamPath: '/webcam/?action=stream' })
+        body: JSON.stringify({ 
+            name, 
+            ip, 
+            port: 7125, 
+            webcamPort: 8080, 
+            webcamPath: '/webcam/?action=stream',
+            cameraEnabled: true,
+            rotation: 0,
+            mirror: false
+        })
     });
     
     document.getElementById('manual-name').value = '';
@@ -107,7 +115,10 @@ async function addSelectedPrinters() {
                     ip: printer.ip, 
                     port: printer.port || 7125, 
                     webcamPort: 8080,
-                    webcamPath: '/webcam/?action=stream'
+                    webcamPath: '/webcam/?action=stream',
+                    cameraEnabled: true,
+                    rotation: 0,
+                    mirror: false
                 })
             });
         }
@@ -127,10 +138,19 @@ async function removePrinter(ip) {
     loadPrinters();
 }
 
-function openEditModal(ip, currentName) {
-    document.getElementById('edit-old-ip').value = ip;
-    document.getElementById('edit-name').value = currentName;
-    document.getElementById('edit-ip').value = ip;
+async function openEditModal(ip) {
+    const res = await fetch('/api/printers');
+    const printers = await res.json();
+    const printer = printers.find(p => p.ip === ip);
+    if (!printer) return;
+
+    document.getElementById('edit-old-ip').value = printer.ip;
+    document.getElementById('edit-name').value = printer.name;
+    document.getElementById('edit-ip').value = printer.ip;
+    document.getElementById('edit-camera-enabled').checked = printer.cameraEnabled !== false;
+    document.getElementById('edit-rotation').value = printer.rotation || 0;
+    document.getElementById('edit-mirror').checked = printer.mirror || false;
+
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
@@ -142,6 +162,9 @@ async function savePrinterEdit() {
     const oldIp = document.getElementById('edit-old-ip').value;
     const name = document.getElementById('edit-name').value.trim();
     const ip = document.getElementById('edit-ip').value.trim();
+    const cameraEnabled = document.getElementById('edit-camera-enabled').checked;
+    const rotation = parseInt(document.getElementById('edit-rotation').value);
+    const mirror = document.getElementById('edit-mirror').checked;
 
     if (!ip) {
         alert("IP address cannot be empty.");
@@ -156,7 +179,7 @@ async function savePrinterEdit() {
     await fetch(`/api/printers/${oldIp}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, ip })
+        body: JSON.stringify({ name, ip, cameraEnabled, rotation, mirror })
     });
 
     closeEditModal();
@@ -203,16 +226,27 @@ function renderPrinters(printers) {
         const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
         const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
 
-        const safeName = printer.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const isCamEnabled = printer.cameraEnabled !== false;
+        const rotation = printer.rotation || 0;
+        const mirror = printer.mirror ? -1 : 1;
+        
+        // Build transform string for rotation and mirroring
+        // Note: For 90 and 270 degree rotations in a 16:9 container, scaling is adjusted to avoid letterbox overflow clipping
+        let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
+        if (rotation === 90 || rotation === 270) {
+            transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
+        }
+
+        const safeIp = printer.ip;
 
         card.innerHTML = `
-            <img class="webcam-feed" src="${primaryCamUrl}" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }">
+            ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }">` : `<div style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;">Camera Disabled</div>`}
 
             <div class="card-top-bar">
                 <h3>${printer.name}</h3>
                 <div style="display: flex; gap: 4px; align-items: center;">
                     <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <button class="icon-btn" onclick="openEditModal('${printer.ip}', '${safeName}')" title="Edit Printer">⚙️</button>
+                    <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
                     <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
                 </div>
             </div>
