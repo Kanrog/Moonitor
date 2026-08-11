@@ -28,7 +28,7 @@ async function addManualPrinter() {
     await fetch('/api/printers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, ip, port: 7125, webcamPort: 8080 })
+        body: JSON.stringify({ name, ip, port: 7125, webcamPort: 8080, webcamPath: '/webcam/?action=stream' })
     });
     
     document.getElementById('manual-name').value = '';
@@ -95,7 +95,13 @@ async function addSelectedPrinters() {
             await fetch('/api/printers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: printer.name, ip: printer.ip, port: printer.port || 7125, webcamPort: 8080 })
+                body: JSON.stringify({ 
+                    name: printer.name, 
+                    ip: printer.ip, 
+                    port: printer.port || 7125, 
+                    webcamPort: 8080,
+                    webcamPath: '/webcam/?action=stream'
+                })
             });
         }
     }
@@ -122,11 +128,13 @@ function renderPrinters(printers) {
         const card = document.createElement('div');
         card.className = 'card';
         
-        card.innerHTML = `
-            <!-- Fullscreen Camera Feed -->
-            <img class="webcam-feed" src="http://${printer.ip}:${printer.webcamPort}/?action=stream" alt="Camera Feed Offline" onerror="this.style.display='none';">
+        const camPath = printer.webcamPath || '/webcam/?action=stream';
+        const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
+        const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
 
-            <!-- Permanent Top Header Bar -->
+        card.innerHTML = `
+            <img class="webcam-feed" src="${primaryCamUrl}" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }">
+
             <div class="card-top-bar">
                 <h3>${printer.name}</h3>
                 <div style="display: flex; gap: 6px; align-items: center;">
@@ -135,7 +143,6 @@ function renderPrinters(printers) {
                 </div>
             </div>
 
-            <!-- Hover Overlay Controls Panel -->
             <div class="card-overlay">
                 <div class="controls-row">
                     <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
@@ -147,6 +154,7 @@ function renderPrinters(printers) {
                     <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
                     <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
                     <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
+                    <button class="danger" onclick="sendGcode('${printer.ip}', 'M84')">Motors Off</button>
                 </div>
                 
                 <div class="controls-row" style="align-items: center;">
@@ -183,7 +191,6 @@ function renderPrinters(printers) {
     });
 }
 
-// Two-tier fetch to identify CORS blocks
 async function checkCorsStatus(ip) {
     try {
         await fetch(`http://${ip}:7125/printer/info`);
