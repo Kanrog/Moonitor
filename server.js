@@ -45,7 +45,7 @@ function getLocalSubnetBase() {
 // Helper to query Moonraker for its actual hostname/printer name
 async function fetchMoonrakerName(ip) {
     return new Promise((resolve) => {
-        const reqTimer = setTimeout(() => resolve(`Printer (${ip})`), 400);
+        const reqTimer = setTimeout(() => resolve(`Printer (${ip})`), 500);
         http.get(`http://${ip}:7125/printer/info`, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
@@ -128,49 +128,57 @@ app.delete('/api/printers/:ip', (req, res) => {
     res.json({ success: true });
 });
 
-app.get('/api/printers/scan', (req, res) => {
+app.get('/api/printers/scan', async (req, res) => {
     const baseSubnet = getLocalSubnetBase();
     const existing = getPrinters();
     const existingIps = new Set(existing.map(p => p.ip));
 
-    // Fire parallel requests across the entire subnet simultaneously for maximum reliability and speed
-    const promises = [];
-    for (let i = 1; i < 255; i++) {
-        const testIp = baseSubnet + i;
-        if (existingIps.has(testIp)) continue;
+    let foundPrinters = [];
+    const batchSize = 40; // Controlled concurrency to prevent socket saturation
 
-        promises.push(
-            new Promise((resolve) => {
-                const reqTimer = setTimeout(() => resolve(null), 400);
-                http.get(`http://${testIp}:7125/printer/info`, (res) => {
-                    let data = '';
-                    res.on('data', chunk => data += chunk);
-                    res.on('end', () => {
-                        clearTimeout(reqTimer);
-                        if (res.statusCode === 200) {
-                            try {
-                                const json = JSON.parse(data);
-                                const hostname = json?.result?.hostname || `Printer (${testIp})`;
-                                resolve({ name: hostname, ip: testIp, port: 7125 });
-                            } catch (e) {
-                                resolve({ name: `Printer (${testIp})`, ip: testIp, port: 7125 });
+    for (let i = 1; i < 255; i += batchSize) {
+        const batchPromises = [];
+        for (let j = i; j < i + batchSize && j < 255; j++) {
+            const testIp = baseSubnet + j;
+            if (existingIps.has(testIp)) continue;
+
+            batchPromises.push(
+                new Promise((resolve) => {
+                    const reqTimer = setTimeout(() => resolve(null), 600);
+                    http.get(`http://${testIp}:7125/printer/info`, (response) => {
+                        let data = '';
+                        response.on('data', chunk => data += chunk);
+                        response.on('end', () => {
+                            clearTimeout(reqTimer);
+                            if (response.statusCode === 200) {
+                                try {
+                                    const json = JSON.parse(data);
+                                    const hostname = json?.result?.hostname || `Printer (${testIp})`;
+                                    resolve({ name: hostname, ip: testIp, port: 7125 });
+                                } catch (e) {
+                                    resolve({ name: `Printer (${testIp})`, ip: testIp, port: 7125 });
+                                }
+                            } else {
+                                resolve(null);
                             }
-                        } else {
-                            resolve(null);
-                        }
+                        });
+                    }).on('error', () => {
+                        clearTimeout(reqTimer);
+                        resolve(null);
                     });
-                }).on('error', () => {
-                    clearTimeout(reqTimer);
-                    resolve(null);
-                });
-            })
-        );
+                })
+            );
+        }
+
+        const results = await Promise.all(batchPromises);
+        results.forEach(p => {
+            if (p !== null && !foundPrinters.some(existingP => existingP.ip === p.ip)) {
+                foundPrinters.push(p);
+            }
+        });
     }
 
-    Promise.all(promises).then(results => {
-        const foundPrinters = results.filter(p => p !== null);
-        res.json(foundPrinters);
-    });
+    res.json(foundPrinters);
 });
 
 server.listen(PORT, () => {
