@@ -29,6 +29,7 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 * **Grid-Based Command Center:** View all your webcam streams side-by-side in a responsive CSS grid that adapts to your screen size.
 * **Essential Controls:** Start, pause, cancel, adjust Z-offset, set temperatures, home axes, and trigger custom macros across your entire fleet from one window.
 * **Persistent Storage:** Saves your fleet configuration locally so your dashboard is exactly how you left it after a reboot.
+* **Flexible Camera Controls:** Enable, disable, rotate (0°, 90°, 180°, 270°), and horizontally mirror your webcam feeds directly from the printer settings to fit any enclosure orientation.
 
 ## Architecture
 
