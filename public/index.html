@@ -5,25 +5,182 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moonitor</title>
     <style>
-        :root { --bg: #1e1e2e; --surface: #313244; --text: #cdd6f4; --accent: #89b4fa; --danger: #f38ba8; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        h1 { text-align: center; color: var(--accent); }
-        .header-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        button { background: var(--accent); color: var(--bg); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        :root { 
+            --bg: #1e1e2e; 
+            --surface: #313244; 
+            --text: #cdd6f4; 
+            --accent: #89b4fa; 
+            --danger: #f38ba8; 
+            --success: #10b981;
+        }
+
+        body { 
+            font-family: system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        h1 { 
+            text-align: center; 
+            color: var(--accent); 
+            margin-bottom: 20px;
+        }
+
+        .header-controls { 
+            display: flex; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+            flex-wrap: wrap; 
+            align-items: center;
+        }
+
+        button { 
+            background: var(--accent); 
+            color: var(--bg); 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: opacity 0.2s;
+        }
+
         button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.danger { background: var(--danger); }
-        input { padding: 8px; border-radius: 4px; border: 1px solid var(--surface); background: var(--bg); color: var(--text); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
-        .card { background: var(--surface); padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 10px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #45475a; padding-bottom: 10px; }
+
+        input { 
+            padding: 8px; 
+            border-radius: 4px; 
+            border: 1px solid var(--surface); 
+            background: var(--bg); 
+            color: var(--text); 
+        }
+
+        /* Searchlight Scan Animation */
+        .searchlight-track {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            height: 4px;
+            background: var(--surface);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 auto 15px auto;
+            position: relative;
+        }
+
+        .searchlight-beam {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 35%;
+            background: linear-gradient(90deg, transparent, var(--accent), #38bdf8, var(--accent), transparent);
+            box-shadow: 0 0 12px #38bdf8;
+            border-radius: 2px;
+            animation: sweep 1.2s infinite ease-in-out alternate;
+        }
+
+        @keyframes sweep {
+            0% { left: -10%; }
+            100% { left: 75%; }
+        }
+
+        .pulse-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1s infinite alternate;
+            margin-right: 6px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 8px var(--accent); }
+        }
+
+        .scan-status {
+            font-size: 0.9em;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
+            gap: 20px; 
+        }
+
+        .card { 
+            background: var(--surface); 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+
+        .card-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #45475a; 
+            padding-bottom: 10px; 
+        }
+
         .card-header h3 { margin: 0; }
-        .webcam-container { width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .webcam-container img { width: 100%; height: 100%; object-fit: cover; }
-        .controls-row { display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .webcam-container { 
+            width: 100%; 
+            aspect-ratio: 4/3; 
+            background: #000; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .webcam-container img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+
+        .controls-row { 
+            display: flex; 
+            gap: 5px; 
+            flex-wrap: wrap; 
+        }
+
         .controls-row input { flex: 1; min-width: 60px; }
         .controls-row button { flex: 1; }
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; background: #45475a; }
-        .remove-btn { background: transparent; color: var(--danger); padding: 4px; flex: none; }
+
+        .status-badge { 
+            padding: 4px 8px; 
+            border-radius: 12px; 
+            font-size: 0.8em; 
+            background: #45475a; 
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .remove-btn { 
+            background: transparent; 
+            color: var(--danger); 
+            padding: 4px; 
+            flex: none; 
+        }
     </style>
 </head>
 <body>
@@ -33,10 +190,14 @@
         <input type="text" id="manual-name" placeholder="Printer Name (Auto-fills)">
         <input type="text" id="manual-ip" placeholder="IP Address">
         <button onclick="addManualPrinter()">Add Printer</button>
-        <button onclick="scanNetwork()">Scan Local Network</button>
+        <button id="scan-btn" onclick="scanNetwork()">Scan Local Network</button>
     </div>
 
-    <div id="scan-results" class="header-controls" style="display: none;"></div>
+    <div class="searchlight-track" id="searchlight">
+        <div class="searchlight-beam"></div>
+    </div>
+
+    <div id="scan-results" class="header-controls scan-status" style="display: none;"></div>
 
     <div class="grid" id="printer-grid"></div>
 
