@@ -61,6 +61,9 @@ Once installed, Moonitor will run in its own dedicated window without browser ta
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
+### Creality K2 / K2 Plus Camera Note
+The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
+
 ## Uninstall
 
 If you ever need to remove Moonitor from your host system, you can use the automated uninstall script. This will stop the background service, remove it from systemd, and delete the Moonitor project directory. It will safely leave Node.js and Git installed so it does not interfere with other services on your machine.
