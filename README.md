@@ -47,6 +47,16 @@ curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh | ba
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3366`.
 
+## Install as an App (PWA)
+
+Moonitor includes full Progressive Web App (PWA) support, allowing you to install it directly to your desktop or mobile home screen as a standalone application.
+
+**How to install:**
+* **Desktop (Chrome/Edge):** Open Moonitor in your browser and click the small "Install App" icon located on the right side of your URL address bar.
+* **Mobile (iOS/Android):** Open Moonitor in Safari or Chrome, tap the "Share" or "Menu" button, and select "Add to Home Screen". 
+
+Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
+
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
