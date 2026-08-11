@@ -22,9 +22,7 @@ async function addManualPrinter() {
                 const data = await res.json();
                 name = data?.result?.hostname || name;
             }
-        } catch (e) {
-            // Fails silently if CORS blocked, uses IP default
-        }
+        } catch (e) {}
     }
 
     await fetch('/api/printers', {
@@ -125,56 +123,59 @@ function renderPrinters(printers) {
         card.className = 'card';
         
         card.innerHTML = `
-            <div class="card-header">
+            <!-- Fullscreen Camera Feed -->
+            <img class="webcam-feed" src="http://${printer.ip}:${printer.webcamPort}/?action=stream" alt="Camera Feed Offline" onerror="this.style.display='none';">
+
+            <!-- Permanent Top Header Bar -->
+            <div class="card-top-bar">
                 <h3>${printer.name}</h3>
-                <div>
+                <div style="display: flex; gap: 6px; align-items: center;">
                     <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <button class="remove-btn" onclick="removePrinter('${printer.ip}')">X</button>
+                    <button class="remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
                 </div>
             </div>
-            
-            <div class="webcam-container">
-                <img src="http://${printer.ip}:${printer.webcamPort}/?action=stream" alt="Webcam offline or loading..." onerror="this.src=''; this.alt='No Camera Stream Found';">
-            </div>
 
-            <div class="controls-row">
-                <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
-                <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
-                <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
-            </div>
+            <!-- Hover Overlay Controls Panel -->
+            <div class="card-overlay">
+                <div class="controls-row">
+                    <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
+                    <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
+                    <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
+                </div>
 
-            <div class="controls-row">
-                <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
-                <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
-                <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
-            </div>
-            
-            <div class="controls-row" style="align-items: center;">
-                <span style="font-size: 0.9em; flex: none;">Z-Offset:</span>
-                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
-                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
-                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
-                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
-            </div>
+                <div class="controls-row">
+                    <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
+                    <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
+                    <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
+                </div>
+                
+                <div class="controls-row" style="align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
+                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
+                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
+                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
+                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
+                </div>
 
-            <div class="controls-row">
-                <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
-                <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
-            </div>
-            
-            <div class="controls-row">
-                <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
-                <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
-            </div>
+                <div class="controls-row">
+                    <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
+                    <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
+                </div>
+                
+                <div class="controls-row">
+                    <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
+                    <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
+                </div>
 
-            <div class="controls-row">
-                <input type="text" id="macro-${printer.ip}" placeholder="Macro Name (e.g. LOAD_FILAMENT)">
-                <button onclick="runMacro('${printer.ip}')">Run Macro</button>
-            </div>
-            
-            <div style="font-size: 0.85em; margin-top: 5px; display: flex; justify-content: space-between; background: #1e1e2e; padding: 10px; border-radius: 4px;">
-                <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
-                <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
+                <div class="controls-row">
+                    <input type="text" id="macro-${printer.ip}" placeholder="Macro (e.g. LOAD_FILAMENT)">
+                    <button onclick="runMacro('${printer.ip}')">Run</button>
+                </div>
+                
+                <div class="temp-footer">
+                    <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
+                    <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
+                </div>
             </div>
         `;
         grid.appendChild(card);
@@ -236,14 +237,14 @@ function connectWebSocket(printer) {
     ws.onclose = async () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
         if (statusEl) {
-            statusEl.textContent = "Checking Connection...";
+            statusEl.textContent = "Checking...";
             const isCorsBlocked = await checkCorsStatus(printer.ip);
             
             if (isCorsBlocked) {
-                statusEl.textContent = "CORS Blocked!";
+                statusEl.textContent = "CORS Blocked";
                 statusEl.style.background = "var(--danger)";
             } else {
-                statusEl.textContent = "Disconnected";
+                statusEl.textContent = "Offline";
                 statusEl.style.background = "#45475a";
             }
         }

@@ -8,6 +8,7 @@
         :root { 
             --bg: #1e1e2e; 
             --surface: #313244; 
+            --overlay-bg: rgba(30, 30, 46, 0.92);
             --text: #cdd6f4; 
             --accent: #89b4fa; 
             --danger: #f38ba8; 
@@ -24,13 +25,14 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         h1 { 
             text-align: center; 
             color: var(--accent); 
             margin: 0 0 10px 0;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
         }
 
         .header-controls { 
@@ -50,13 +52,13 @@
             border-radius: 4px; 
             cursor: pointer; 
             font-weight: bold; 
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: opacity 0.2s;
         }
 
         button:hover { opacity: 0.9; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-        button.danger { background: var(--danger); }
+        button.danger { background: var(--danger); color: #fff; }
 
         input { 
             padding: 6px 10px; 
@@ -64,7 +66,7 @@
             border: 1px solid var(--surface); 
             background: var(--bg); 
             color: var(--text); 
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         /* Searchlight Scan Animation */
@@ -121,7 +123,7 @@
             flex-wrap: wrap;
         }
 
-        /* Checkbox Scan Results Container */
+        /* Scan Results Container */
         #scan-results {
             display: none;
             flex-direction: column;
@@ -133,6 +135,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             gap: 8px;
+            z-index: 100;
         }
 
         .scan-list-item {
@@ -153,7 +156,7 @@
             flex: 1;
         }
 
-        /* Strict 3-column, 2-row scaling layout for 6 printers */
+        /* Strict 3x2 Grid Layout for 6 Printers */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -161,99 +164,145 @@
             gap: 12px; 
             flex: 1;
             min-height: 0;
-            overflow-y: auto;
-            padding-bottom: 10px;
-        }
-
-        @media (max-width: 1200px) {
-            .grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
-        }
-
-        .card { 
-            background: var(--surface); 
-            padding: 10px 12px; 
-            border-radius: 6px; 
-            box-shadow: 0 3px 5px rgba(0,0,0,0.3); 
-            display: flex; 
-            flex-direction: column; 
-            gap: 6px; 
-            font-size: 0.85rem;
-            box-sizing: border-box;
             overflow: hidden;
         }
 
-        .card-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #45475a; 
-            padding-bottom: 6px; 
+        @media (max-width: 1200px) {
+            .grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); }
         }
 
-        .card-header h3 { 
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+        }
+
+        /* Camera-First Card Design */
+        .card { 
+            background: #000; 
+            border-radius: 6px; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4); 
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--surface);
+        }
+
+        .webcam-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Always-on Top Bar (Name & Status Badge) */
+        .card-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+            pointer-events: none; /* Let clicks pass through to video if needed */
+        }
+
+        .card-top-bar > * {
+            pointer-events: auto;
+        }
+
+        .card-top-bar h3 { 
             margin: 0; 
             font-size: 0.95rem;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .webcam-container { 
-            width: 100%; 
-            aspect-ratio: 16/9; 
-            background: #000; 
-            border-radius: 4px; 
-            overflow: hidden; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            max-height: 130px;
+        .status-badge { 
+            padding: 3px 8px; 
+            border-radius: 10px; 
+            font-size: 0.75rem; 
+            background: #45475a; 
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
-        .webcam-container img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
+        .remove-btn { 
+            background: rgba(0,0,0,0.5); 
+            color: var(--danger); 
+            border: 1px solid var(--danger);
+            border-radius: 4px;
+            padding: 2px 6px; 
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .remove-btn:hover { background: var(--danger); color: #fff; }
+
+        /* Hover Overlay Controls Panel */
+        .card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--overlay-bg);
+            backdrop-filter: blur(4px);
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 15px;
+            gap: 8px;
+            box-sizing: border-box;
+            pointer-events: none; /* Hidden from clicks until hovered */
+        }
+
+        .card:hover .card-overlay {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .controls-row { 
             display: flex; 
-            gap: 4px; 
+            gap: 6px; 
             flex-wrap: wrap; 
         }
 
         .controls-row input { 
             flex: 1; 
             min-width: 50px; 
-            padding: 4px 6px;
+            padding: 5px 8px;
             font-size: 0.8rem;
+            background: var(--bg);
         }
 
         .controls-row button { 
             flex: 1; 
-            padding: 4px 8px;
-            font-size: 0.8rem;
+            padding: 5px 8px;
+            font-size: 0.75rem;
         }
 
-        .status-badge { 
-            padding: 2px 6px; 
-            border-radius: 10px; 
-            font-size: 0.75rem; 
-            background: #45475a; 
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .remove-btn { 
-            background: transparent; 
-            color: var(--danger); 
-            padding: 2px 6px; 
-            font-size: 0.8rem;
-            flex: none; 
+        .temp-footer {
+            font-size: 0.8rem; 
+            display: flex; 
+            justify-content: space-between; 
+            background: var(--bg); 
+            padding: 6px 10px; 
+            border-radius: 4px;
+            border: 1px solid var(--surface);
         }
     </style>
 </head>
