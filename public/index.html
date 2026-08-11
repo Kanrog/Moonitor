@@ -114,6 +114,38 @@
             flex-wrap: wrap;
         }
 
+        /* Checkbox Scan Results Container */
+        #scan-results {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            background: var(--surface);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            gap: 10px;
+        }
+
+        .scan-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .scan-list-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            flex: 1;
+        }
+
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
@@ -197,7 +229,12 @@
         <div class="searchlight-beam"></div>
     </div>
 
-    <div id="scan-results" class="header-controls scan-status" style="display: none;"></div>
+    <div id="scan-status-text" class="scan-status" style="margin-bottom: 10px;"></div>
+
+    <div id="scan-results">
+        <div id="scan-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <button onclick="addSelectedPrinters()" style="width: 100%; margin-top: 5px;">Add Selected Printers</button>
+    </div>
 
     <div class="grid" id="printer-grid"></div>
 

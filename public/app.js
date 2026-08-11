@@ -1,4 +1,5 @@
 let sockets = {};
+let foundDiscoveredPrinters = [];
 
 document.addEventListener('DOMContentLoaded', loadPrinters);
 
@@ -39,47 +40,71 @@ async function addManualPrinter() {
 
 async function scanNetwork() {
     const scanBtn = document.getElementById('scan-btn');
-    const scanDiv = document.getElementById('scan-results');
+    const scanResultsDiv = document.getElementById('scan-results');
+    const scanList = document.getElementById('scan-list');
+    const statusText = document.getElementById('scan-status-text');
     const searchlight = document.getElementById('searchlight');
     
     scanBtn.disabled = true;
+    scanResultsDiv.style.display = 'none';
     searchlight.style.display = 'block';
-    scanDiv.style.display = 'flex';
-    scanDiv.innerHTML = '<span class="pulse-dot"></span> Scouting local subnets for Moonraker endpoints...';
+    statusText.innerHTML = '<span class="pulse-dot"></span> Scouting local subnets for Moonraker endpoints...';
     
     try {
         const res = await fetch('/api/printers/scan');
-        const discovered = await res.json();
+        foundDiscoveredPrinters = await res.json();
         
-        scanDiv.innerHTML = '';
+        scanList.innerHTML = '';
         
-        if (discovered.length === 0) {
-            scanDiv.innerHTML = '<span>No new printers found on network.</span>';
-            setTimeout(() => {
-                scanDiv.style.display = 'none';
-            }, 4000);
+        if (foundDiscoveredPrinters.length === 0) {
+            statusText.innerHTML = '<span>No new printers found on network.</span>';
+            setTimeout(() => { statusText.innerHTML = ''; }, 4000);
         } else {
-            discovered.forEach(p => {
-                const btn = document.createElement('button');
-                btn.textContent = `Add ${p.name} (${p.ip})`;
-                btn.onclick = async () => {
-                    await fetch('/api/printers', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: p.name, ip: p.ip, port: p.port, webcamPort: 8080 })
-                    });
-                    scanDiv.style.display = 'none';
-                    loadPrinters();
-                };
-                scanDiv.appendChild(btn);
+            statusText.innerHTML = `<span>Found ${foundDiscoveredPrinters.length} printer(s). Select the ones you want to add:</span>`;
+            
+            foundDiscoveredPrinters.forEach((p, index) => {
+                const item = document.createElement('div');
+                item.className = 'scan-list-item';
+                item.innerHTML = `
+                    <label>
+                        <input type="checkbox" id="scan-item-${index}" value="${index}" checked>
+                        <span><strong>${p.name}</strong> <span style="color: var(--text-muted); font-size: 0.85em;">(${p.ip})</span></span>
+                    </label>
+                `;
+                scanList.appendChild(item);
             });
+            
+            scanResultsDiv.style.display = 'flex';
         }
     } catch (e) {
-        scanDiv.innerHTML = '<span style="color:var(--danger)">Scan failed to reach backend server.</span>';
+        statusText.innerHTML = '<span style="color:var(--danger)">Scan failed to reach backend server.</span>';
     } finally {
         scanBtn.disabled = false;
         searchlight.style.display = 'none';
     }
+}
+
+async function addSelectedPrinters() {
+    const checkboxes = document.querySelectorAll('#scan-list input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) {
+        alert("Please select at least one printer to add.");
+        return;
+    }
+
+    for (const cb of checkboxes) {
+        const printer = foundDiscoveredPrinters[cb.value];
+        if (printer) {
+            await fetch('/api/printers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: printer.name, ip: printer.ip, port: printer.port || 7125, webcamPort: 8080 })
+            });
+        }
+    }
+
+    document.getElementById('scan-results').style.display = 'none';
+    document.getElementById('scan-status-text').innerHTML = '';
+    loadPrinters();
 }
 
 async function removePrinter(ip) {
