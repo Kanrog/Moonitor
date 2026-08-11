@@ -1,0 +1,78 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        /* Orbit Animations */
+        @keyframes spin-cw { 100% { transform: rotate(360deg); } }
+        @keyframes spin-ccw { 100% { transform: rotate(-360deg); } }
+
+        .orbit-1 { animation: spin-cw 14s linear infinite; transform-origin: 100px 100px; }
+        .orbit-2 { animation: spin-ccw 20s linear infinite; transform-origin: 100px 100px; }
+        .orbit-3 { animation: spin-cw 28s linear infinite; transform-origin: 100px 100px; }
+    </style>
+
+    <defs>
+        <!-- Toolhead Vector Design -->
+        <g id="toolhead">
+            <!-- PTFE Tube / Filament -->
+            <rect x="-1.5" y="-18" width="3" height="6" fill="#89b4fa"/>
+            
+            <!-- Heatsink Base -->
+            <rect x="-8" y="-12" width="16" height="14" rx="2" fill="#cdd6f4"/>
+            <!-- Heatsink Fins -->
+            <line x1="-8" y1="-9" x2="8" y2="-9" stroke="#1e1e2e" stroke-width="1.5"/>
+            <line x1="-8" y1="-5" x2="8" y2="-5" stroke="#1e1e2e" stroke-width="1.5"/>
+            <line x1="-8" y1="-1" x2="8" y2="-1" stroke="#1e1e2e" stroke-width="1.5"/>
+            
+            <!-- Heater Block -->
+            <rect x="-6" y="2" width="12" height="8" rx="1" fill="#f38ba8"/>
+            <!-- Silicone Sock Highlight -->
+            <line x1="-4" y1="4" x2="-4" y2="8" stroke="#f9e2af" stroke-width="1" opacity="0.5"/>
+            
+            <!-- Nozzle -->
+            <polygon points="-2,10 2,10 1,14 -1,14" fill="#f9e2af"/>
+        </g>
+        
+        <!-- Moon Subtraction Mask to create the crescent -->
+        <mask id="moon-mask">
+            <rect width="200" height="200" fill="white" />
+            <circle cx="114" cy="86" r="44" fill="black" />
+        </mask>
+
+        <!-- Soft Glow Filter for the Moon -->
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <!-- Background Orbit Paths (Concentric Circles) -->
+    <!-- Inner Orbit (Radius 55) -->
+    <circle cx="100" cy="100" r="55" fill="none" stroke="#313244" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <!-- Middle Orbit (Radius 70) -->
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#313244" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <!-- Outer Orbit (Radius 85) -->
+    <circle cx="100" cy="100" r="85" fill="none" stroke="#313244" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+    <!-- The Crescent Moon -->
+    <circle cx="100" cy="100" r="45" fill="#89b4fa" mask="url(#moon-mask)" filter="url(#glow)"/>
+
+    <!-- Orbiting Hotends -->
+    <!-- Placed at Y values corresponding to 100 minus the orbit radius -->
+    
+    <g class="orbit-1">
+        <use href="#toolhead" x="100" y="45" />
+    </g>
+    
+    <g class="orbit-2">
+        <!-- Rotate initial starting position by 120 degrees -->
+        <g transform="rotate(120 100 100)">
+            <use href="#toolhead" x="100" y="30" />
+        </g>
+    </g>
+    
+    <g class="orbit-3">
+        <!-- Rotate initial starting position by 240 degrees -->
+        <g transform="rotate(240 100 100)">
+            <use href="#toolhead" x="100" y="15" />
+        </g>
+    </g>
+</svg>

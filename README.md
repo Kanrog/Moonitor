@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/logo_animated.svg" width="250" alt="Moonitor Logo">
+</p>
+
 # Moonitor
 
 **A lightweight, zero-latency fleet dashboard for Klipper and Moonraker.**
