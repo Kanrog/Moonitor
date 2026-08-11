@@ -14,7 +14,7 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 
 | Fully Configured Fleet Dashboard | Hover Control Overlay |
 | :---: | :---: |
-| ![Fully set up interface with printers added](images/1.png) | ![Control overlay on a printer card](images/2.png) |
+| ![Fully set up interface with printers added](images/1.jpg) | ![Control overlay on a printer card](images/2.png) |
 | *Managing multiple Klipper nodes from a single window.* | *Access instant controls, telemetry, and macros on hover.* |
 
 | Network Scan Results |
