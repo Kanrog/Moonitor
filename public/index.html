@@ -154,7 +154,7 @@
             flex: 1;
         }
 
-        /* Default Full-Screen: 3 Columns, 2 Rows (6 Printers) */
+        /* Default Full-Screen: 3 Columns, 2 Rows */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -162,17 +162,18 @@
             gap: 12px; 
             flex: 1;
             min-height: 0;
-            overflow: hidden;
+            overflow-y: auto;
         }
 
-        /* Half-Screen / Narrower Desktop: 2 Columns, 3 Rows (6 Printers in a 2x3 grid) */
-        @media (max-width: 1400px) {
+        /* Half-Screen Desktop (Width <= 1600px): Switches to 2 Columns, 3 Rows (2x3 grid) */
+        @media (max-width: 1600px) {
             .grid { 
                 grid-template-columns: repeat(2, 1fr); 
                 grid-template-rows: repeat(3, minmax(0, 1fr)); 
             }
         }
 
+        /* Mobile / Small Screens: Single Column */
         @media (max-width: 768px) {
             .grid { 
                 grid-template-columns: 1fr; 
