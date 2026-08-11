@@ -6,6 +6,18 @@ Moonitor is a unified browser interface designed to let you monitor and control 
 
 It is built on the philosophy that **individual Klipper hosts should remain localized in their respective printers.** Instead of trying to centralize hardware connections onto one massive host machine, Moonitor acts strictly as a lightweight HTML thin-client dashboard. It handles the high-level UI while letting your individual printers do the heavy lifting.
 
+## Gallery
+
+| Fully Configured Fleet Dashboard | Hover Control Overlay |
+| :---: | :---: |
+| ![Fully set up interface with printers added](images/1.png) | ![Control overlay on a printer card](images/2.png) |
+| *Managing multiple Klipper nodes from a single window.* | *Access instant controls, telemetry, and macros on hover.* |
+
+| Network Scan Results |
+| :---: |
+| ![Network scan results dialog](images/3.png) |
+| *Easily discover and batch-add local Moonraker endpoints.* |
+
 ## Features
 
 * **Network Discovery:** Built-in mDNS scanning automatically finds Moonraker instances on your local network - no hunting for IP addresses.
