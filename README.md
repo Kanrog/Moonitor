@@ -10,6 +10,8 @@ Moonitor is a unified browser interface designed to let you monitor and control 
 
 It is built on the philosophy that **individual Klipper hosts should remain localized in their respective printers.** Instead of trying to centralize hardware connections onto one massive host machine, Moonitor acts strictly as a lightweight HTML thin-client dashboard. It handles the high-level UI while letting your individual printers do the heavy lifting.
 
+---
+
 ## Gallery
 
 | Fully Configured Fleet Dashboard | Hover Control Overlay |
@@ -21,6 +23,8 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 | :---: |
 | ![Network scan results dialog](images/3.png) |
 | *Easily discover and batch-add local Moonraker endpoints.* |
+
+---
 
 ## Features
 
@@ -34,10 +38,14 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 ### Creality K2 / K2 Plus Camera Note
 The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
 
+---
+
 ## Architecture
 
 * **Backend:** A tiny Node.js server that handles local network scanning (mDNS/Bonjour) and serves the static UI files.
 * **Frontend:** Vanilla JavaScript and HTML. The frontend talks directly to the Moonraker WebSockets, bypassing the Node backend entirely for live printer control. 
+
+---
 
 ## Quick Install
 
@@ -50,6 +58,8 @@ curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh | ba
 ```
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3366`.
+
+---
 
 ## Install as an App (PWA)
 
@@ -64,6 +74,8 @@ Once installed, Moonitor will run in its own dedicated window without browser ta
 **Note on Moonraker CORS:**
 Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
+---
+
 ## Updating Moonitor
 
 Moonitor does not include an auto-updater to keep the dashboard as lightweight and secure as possible. 
@@ -76,6 +88,8 @@ git pull
 npm install
 sudo systemctl restart moonitor.service
 ```
+
+---
 
 ## Uninstall
 
