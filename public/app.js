@@ -116,7 +116,7 @@ async function removePrinter(ip) {
         sockets[ip].close();
         delete sockets[ip];
     }
-    await fetch(`/api/printers/${ip}`, { method: 'DELETE' }];
+    await fetch(`/api/printers/${ip}`, { method: 'DELETE' });
     loadPrinters();
 }
 
@@ -156,10 +156,9 @@ async function savePrinterEdit() {
     loadPrinters();
 }
 
-// Fetch macros dynamically from Moonraker and populate dropdown
 async function fetchMacros(ip) {
     const selectEl = document.getElementById(`macro-select-${ip}`);
-    if (!selectEl || selectEl.options.length > 1) return; // Prevent reloading if already populated
+    if (!selectEl || selectEl.options.length > 1) return;
 
     try {
         const res = await fetch(`http://${ip}:7125/printer/objects/list`);
@@ -167,7 +166,6 @@ async function fetchMacros(ip) {
         const data = await res.json();
         
         const objects = data?.result?.objects || [];
-        // Filter objects starting with "gcode_macro " and ignore those containing an underscore after the prefix
         const macros = objects
             .filter(obj => obj.startsWith('gcode_macro '))
             .map(obj => obj.replace('gcode_macro ', ''))
@@ -198,6 +196,9 @@ function renderPrinters(printers) {
         const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
         const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
 
+        // Safely escape printer name for inline onclick string passing
+        const safeName = printer.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
         card.innerHTML = `
             <img class="webcam-feed" src="${primaryCamUrl}" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }">
 
@@ -205,7 +206,7 @@ function renderPrinters(printers) {
                 <h3>${printer.name}</h3>
                 <div style="display: flex; gap: 4px; align-items: center;">
                     <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <button class="icon-btn" onclick="openEditModal('${printer.ip}', '${printer.name.replace(/'/g, "\\'")}')" title="Edit Printer">⚙️</button>
+                    <button class="icon-btn" onclick="openEditModal('${printer.ip}', '${safeName}')" title="Edit Printer">⚙️</button>
                     <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
                 </div>
             </div>
