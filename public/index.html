@@ -154,7 +154,7 @@
             flex: 1;
         }
 
-        /* Default Full-Screen: 3 Columns, 2 Rows */
+        /* Grid Layout: 3 Columns, allowing natural wrapping rows without overlaps */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -162,6 +162,7 @@
             flex: 1;
             min-height: 0;
             overflow-y: auto;
+            align-content: start;
         }
 
         /* Half-Screen Desktop (Width <= 1600px): Switches to 2 Columns (2x3 grid layout) */
@@ -178,7 +179,7 @@
             }
         }
 
-        /* Enforce strict 16:9 Aspect Ratio on Camera Cards */
+        /* Card Container with strict 16:9 proportions */
         .card { 
             background: #000; 
             border-radius: 6px; 
@@ -187,8 +188,6 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
             border: 1px solid var(--surface);
             aspect-ratio: 16 / 9;
             width: 100%;
@@ -197,12 +196,9 @@
         .webcam-feed {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Prevents stretching and preserves native aspect ratio */
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            background: #000;
+            object-fit: cover;
+            display: block;
+            flex: 1;
         }
 
         .card-top-bar {
