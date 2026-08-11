@@ -9,9 +9,23 @@ async function loadPrinters() {
 }
 
 async function addManualPrinter() {
-    const name = document.getElementById('manual-name').value;
-    const ip = document.getElementById('manual-ip').value;
-    if (!name || !ip) return alert("Please enter both a name and an IP address.");
+    let name = document.getElementById('manual-name').value.trim();
+    const ip = document.getElementById('manual-ip').value.trim();
+    if (!ip) return alert("Please enter an IP address.");
+
+    // Automatically pull hostname if left blank
+    if (!name) {
+        name = `Printer (${ip})`;
+        try {
+            const res = await fetch(`http://${ip}:7125/printer/info`);
+            if (res.ok) {
+                const data = await res.json();
+                name = data?.result?.hostname || name;
+            }
+        } catch (e) {
+            // Fails silently if CORS blocks it, defaults to IP
+        }
+    }
 
     await fetch('/api/printers', {
         method: 'POST',
@@ -25,10 +39,13 @@ async function addManualPrinter() {
 }
 
 async function scanNetwork() {
-    const res = await fetch('/api/printers/scan');
-    const discovered = await res.json();
     const scanDiv = document.getElementById('scan-results');
     scanDiv.style.display = 'flex';
+    scanDiv.innerHTML = '<span>Scouting local network... this may take up to 15 seconds.</span>';
+    
+    const res = await fetch('/api/printers/scan');
+    const discovered = await res.json();
+    
     scanDiv.innerHTML = '';
     
     if (discovered.length === 0) {
@@ -70,7 +87,6 @@ function renderPrinters(printers) {
         const card = document.createElement('div');
         card.className = 'card';
         
-        // Crowsnest / mjpg-streamer standard URL: http://IP:8080/?action=stream
         card.innerHTML = `
             <div class="card-header">
                 <h3>${printer.name}</h3>
@@ -129,6 +145,21 @@ function renderPrinters(printers) {
     });
 }
 
+// Two-tier fetch to identify CORS blocks
+async function checkCorsStatus(ip) {
+    try {
+        await fetch(`http://${ip}:7125/printer/info`);
+        return false; 
+    } catch (e) {
+        try {
+            await fetch(`http://${ip}:7125/printer/info`, { mode: 'no-cors' });
+            return true; // Pinged successfully but standard fetch failed = CORS
+        } catch (pingErr) {
+            return false; // Completely offline
+        }
+    }
+}
+
 function connectWebSocket(printer) {
     if (sockets[printer.ip]) {
         sockets[printer.ip].close();
@@ -138,56 +169,48 @@ function connectWebSocket(printer) {
     sockets[printer.ip] = ws;
 
     ws.onopen = () => {
-        document.getElementById(`status-${printer.ip}`).textContent = "Connected";
+        const statusEl = document.getElementById(`status-${printer.ip}`);
+        if(statusEl) {
+            statusEl.textContent = "Connected";
+            statusEl.style.background = "#10b981"; // Success green
+        }
         
-        // Request the initial state of the printer
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.query",
-            params: {
-                objects: {
-                    print_stats: null,
-                    extruder: null,
-                    heater_bed: null
-                }
-            },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
             id: 1
         }));
         
-        // Subscribe to live push updates
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.subscribe",
-            params: {
-                objects: {
-                    print_stats: null,
-                    extruder: null,
-                    heater_bed: null
-                }
-            },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
             id: 2
         }));
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
-        // Handle the initial state payload
-        if (data.result && data.result.status) {
-            updatePrinterUI(printer.ip, data.result.status);
-        }
-        
-        // Handle live subscription updates
-        if (data.method === "notify_status_update") {
-            updatePrinterUI(printer.ip, data.params[0]);
-        }
+        if (data.result && data.result.status) updatePrinterUI(printer.ip, data.result.status);
+        if (data.method === "notify_status_update") updatePrinterUI(printer.ip, data.params[0]);
     };
 
-    ws.onclose = () => {
+    ws.onclose = async () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
-        if(statusEl) statusEl.textContent = "Disconnected";
+        if (statusEl) {
+            statusEl.textContent = "Checking Connection...";
+            const isCorsBlocked = await checkCorsStatus(printer.ip);
+            
+            if (isCorsBlocked) {
+                statusEl.textContent = "CORS Blocked!";
+                statusEl.style.background = "var(--danger)";
+            } else {
+                statusEl.textContent = "Disconnected";
+                statusEl.style.background = "#45475a";
+            }
+        }
         
-        // Attempt to reconnect every 5 seconds if connection drops
         setTimeout(() => {
             if(document.getElementById(`status-${printer.ip}`)) connectWebSocket(printer);
         }, 5000);
@@ -210,10 +233,11 @@ function sendCommand(ip, method, params = {}) {
     const ws = sockets[ip];
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ jsonrpc: "2.0", method: method, params: params, id: Date.now() }));
+    } else {
+        alert("Printer is not connected. Check CORS settings or network.");
     }
 }
 
-// Moonraker uses printer.gcode.script to send raw commands directly to Klipper
 function sendGcode(ip, script) {
     sendCommand(ip, "printer.gcode.script", { script: script });
 }
