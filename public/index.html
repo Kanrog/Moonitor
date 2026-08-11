@@ -192,23 +192,25 @@
             object-fit: cover;
             display: block;
             flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
 
+        /* Top Bar layered above the overlay (z-index: 4) so buttons are clickable */
         .card-top-bar {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
             padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 2;
-            pointer-events: none;
+            z-index: 4;
         }
-
-        .card-top-bar > * { pointer-events: auto; }
 
         .card-top-bar h3 { 
             margin: 0; 
@@ -242,6 +244,7 @@
         .icon-btn:hover { background: var(--surface); color: #fff; }
         .remove-btn:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 
+        /* Overlay sits at z-index: 2, below the top bar */
         .card-overlay {
             position: absolute;
             top: 0;
@@ -250,7 +253,7 @@
             bottom: 0;
             background: var(--overlay-bg);
             backdrop-filter: blur(4px);
-            z-index: 3;
+            z-index: 2;
             opacity: 0;
             transition: opacity 0.25s ease-in-out;
             display: flex;
