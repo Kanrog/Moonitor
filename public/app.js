@@ -230,8 +230,6 @@ function renderPrinters(printers) {
         const rotation = printer.rotation || 0;
         const mirror = printer.mirror ? -1 : 1;
         
-        // Build transform string for rotation and mirroring
-        // Note: For 90 and 270 degree rotations in a 16:9 container, scaling is adjusted to avoid letterbox overflow clipping
         let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
         if (rotation === 90 || rotation === 270) {
             transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
@@ -246,6 +244,7 @@ function renderPrinters(printers) {
                 <h3>${printer.name}</h3>
                 <div style="display: flex; gap: 4px; align-items: center;">
                     <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
+                    <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
                     <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
                     <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
                 </div>
@@ -387,7 +386,7 @@ function updatePrinterUI(ip, status) {
 function sendCommand(ip, method, params = {}) {
     const ws = sockets[ip];
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ jsonrpc: "2.0", method: method, params: params, id: Date.now() }));
+        ws.send(JSON.stringify({ jsonrpc: "2.0", method: method, params: params, id: Date.now() }))
     } else {
         alert("Printer is not connected. Check CORS settings or network.");
     }
