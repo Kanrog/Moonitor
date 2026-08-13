@@ -29,11 +29,16 @@ else
     cd "$INSTALL_DIR"
 fi
 
-# 3. Install dependencies
+# 3. Set executable permissions for scripts
+echo "Setting file permissions..."
+chmod +x update.sh
+chmod +x install.sh
+
+# 4. Install dependencies
 echo "Installing npm dependencies..."
 npm install
 
-# 4. Setup systemd service
+# 5. Setup systemd service
 SERVICE_FILE="/etc/systemd/system/moonitor.service"
 echo "Setting up systemd service to run in the background..."
 
@@ -54,12 +59,12 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-# 5. Reload and start systemd service
+# 6. Reload and start systemd service
 sudo systemctl daemon-reload
 sudo systemctl enable moonitor.service
 sudo systemctl start moonitor.service
 
-# 6. Get Local IP
+# 7. Get Local IP
 LOCAL_IP=$(hostname -I | awk '{print $1}')
 
 echo -e "\e[1;32mInstallation Complete!\e[0m"
