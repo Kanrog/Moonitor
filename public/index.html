@@ -338,27 +338,45 @@
         }
         .modal-card h3 { margin: 0 0 5px 0; color: var(--accent); }
 
-        /* Mobile Responsive Layout */
-            @media (max-width: 768px) {
-            #printer-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        }
-        /* Touch Device Overlay Logic */
-            @media (hover: none) {
-        /* Disable the hover effect entirely on touch screens */
-            .card:hover .card-overlay {
-            opacity: 0;
-            pointer-events: none;
-        }
+/* Mobile Responsive Layout */
+@media (max-width: 768px) {
+    #printer-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem; /* Adds breathing room between stacked cards */
+    }
+
+    .card {
+        min-height: 380px; /* Forces the card to be tall enough to hold all controls */
+        overflow: hidden; /* Strictly prevents active controls from spilling over into the next card */
+    }
+
+    .webcam-feed {
+        height: 100%;
+        width: 100%;
+        object-fit: cover; /* Ensures the camera feed scales up to fill the taller card space without distorting */
+    }
+
+    .card-overlay {
+        max-height: 100%;
+        overflow-y: auto; /* Enables vertical scrolling inside the overlay for ultra-small phone screens */
+        box-sizing: border-box;
+    }
+}
+
+/* Touch Device Overlay Logic */
+@media (hover: none) {
+    /* Disable the hover effect entirely on touch screens */
+    .card:hover .card-overlay {
+        opacity: 0;
+        pointer-events: none;
+    }
     
-         /* Apply visibility only when our new tap-to-toggle class is active */
-            .card.touch-active .card-overlay {
-            opacity: 1;
-            pointer-events: auto;
-       }
-        }
+    /* Apply visibility only when our new tap-to-toggle class is active */
+    .card.touch-active .card-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
     </style>
 </head>
 <body>
