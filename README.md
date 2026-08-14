@@ -63,11 +63,9 @@ Once installed, open a browser on your network and navigate to `http://<YOUR_HOS
 
 ## Install as an App (PWA)
 
-## 📱 Install as an App (PWA)
-
 Moonitor includes full Progressive Web App (PWA) support, allowing you to install it directly to your desktop or mobile home screen as a standalone application. Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
 
-> **💡 Note on Local Network Installation:**
+> *💡 Note on Local Network Installation:**
 > Because Moonitor runs locally over standard HTTP rather than HTTPS, modern browsers hide the automatic "Install App" button in the address bar. You will need to use the browser's built-in menus to install it.
 
 **How to install:**
@@ -75,6 +73,8 @@ Moonitor includes full Progressive Web App (PWA) support, allowing you to instal
 * **Desktop (Chrome/Edge):** Open the browser's main menu (three dots in the top right), navigate to **"Save and share"** (or "Apps"), and click **"Install page as app"**.
 
 Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
+
+---
 
 > **Note on Moonraker CORS:**
 > Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
@@ -91,8 +91,8 @@ To update your installation to the latest version, SSH into the machine hosting 
 ./Moonitor/update.sh
 ```
 
-please note that this only works if you installed Moonitor after August 13th 2026.
-if you have an earlier version, you need to reinstall Moonitor.
+Please note that this only works if you installed Moonitor after August 13th 2026.
+If you have an earlier version, you need to reinstall Moonitor.
 
 ---
 
