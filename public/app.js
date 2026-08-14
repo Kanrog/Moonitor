@@ -7,7 +7,18 @@ if ('serviceWorker' in navigator) {
 let sockets = {};
 let foundDiscoveredPrinters = [];
 
-document.addEventListener('DOMContentLoaded', loadPrinters);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPrinters();
+
+    // Mobile tap-to-close logic: Closes the overlay if you tap outside of it on touch devices
+    document.addEventListener('click', (e) => {
+        if (!window.matchMedia('(hover: hover)').matches) {
+            if (!e.target.closest('.card-overlay') && !e.target.closest('.webcam-feed') && !e.target.closest('.camera-disabled-placeholder')) {
+                document.querySelectorAll('.card.touch-active').forEach(c => c.classList.remove('touch-active'));
+            }
+        }
+    });
+});
 
 async function loadPrinters() {
     const res = await fetch('/api/printers');
@@ -214,6 +225,22 @@ async function fetchMacros(ip) {
     }
 }
 
+function toggleOverlay(element, ip) {
+    // Prevent this from running on desktop (devices with hover capability)
+    if (window.matchMedia('(hover: hover)').matches) return;
+    
+    const card = element.closest('.card');
+    const isActive = card.classList.contains('touch-active');
+    
+    // Close any other open overlays before opening a new one
+    document.querySelectorAll('.card.touch-active').forEach(c => c.classList.remove('touch-active'));
+    
+    if (!isActive) {
+        card.classList.add('touch-active');
+        fetchMacros(ip);
+    }
+}
+
 function renderPrinters(printers) {
     const grid = document.getElementById('printer-grid');
     grid.innerHTML = '';
@@ -238,7 +265,7 @@ function renderPrinters(printers) {
         const safeIp = printer.ip;
 
         card.innerHTML = `
-            ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }">` : `<div style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;">Camera Disabled</div>`}
+            ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
 
             <div class="card-top-bar">
                 <h3>${printer.name}</h3>
