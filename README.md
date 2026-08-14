@@ -78,16 +78,16 @@ Once installed, Moonitor will run in its own dedicated window without browser ta
 
 ## Updating Moonitor
 
-Moonitor does not include an auto-updater to keep the dashboard as lightweight and secure as possible. 
+Moonitor does not include an auto-updater to keep the dashboard as lightweight and secure as possible. Instead, the four commands needed to update it has been simplified into one.
 
-To update your installation to the latest version, SSH into the machine hosting Moonitor (your Klipper host or home server) and run the following commands to pull the latest code, update any dependencies, and restart the background service:
+To update your installation to the latest version, SSH into the machine hosting Moonitor (your Klipper host or home server) and run this following command to pull the latest code, update any dependencies, and restart the background service:
 
 ```bash
-cd ~/Moonitor
-git pull
-npm install
-sudo systemctl restart moonitor.service
+./Moonitor/update.sh
 ```
+
+please note that this only works if you installed Moonitor after August 13th 2026.
+if you have an earlier version, you need to reinstall Moonitor.
 
 ---
 
