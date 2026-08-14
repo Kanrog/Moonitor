@@ -13,7 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mobile tap-to-close logic: Closes the overlay if you tap outside of it on touch devices
     document.addEventListener('click', (e) => {
         if (!window.matchMedia('(hover: hover)').matches) {
-            if (!e.target.closest('.card-overlay') && !e.target.closest('.webcam-feed') && !e.target.closest('.camera-disabled-placeholder')) {
+            const isInteractive = e.target.closest('button, input, select');
+            const isOverlay = e.target.closest('.card-overlay');
+            const isFeed = e.target.closest('.webcam-feed, .camera-disabled-placeholder');
+
+            // If clicked inside the active overlay but NOT on a control (button/input), close it
+            if (isOverlay && !isInteractive) {
+                document.querySelectorAll('.card.touch-active').forEach(c => c.classList.remove('touch-active'));
+            }
+            // If clicked completely outside the card overlay and the camera feed, close it
+            else if (!isOverlay && !isFeed) {
                 document.querySelectorAll('.card.touch-active').forEach(c => c.classList.remove('touch-active'));
             }
         }
@@ -141,6 +150,10 @@ async function addSelectedPrinters() {
 }
 
 async function removePrinter(ip) {
+    if (!confirm(`Are you sure you want to remove the printer at ${ip}?`)) {
+        return;
+    }
+
     if (sockets[ip]) {
         sockets[ip].close();
         delete sockets[ip];
