@@ -63,23 +63,16 @@ Once installed, open a browser on your network and navigate to `http://<YOUR_HOS
 
 ## Install as an App (PWA)
 
-## 📱 Install as an App (PWA)
-
 Moonitor includes full Progressive Web App (PWA) support, allowing you to install it directly to your desktop or mobile home screen as a standalone application. Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
 
-**How to install:**
-* **Desktop (Chrome/Edge):** Open the browser's main menu (three dots in the top right), navigate to **"Save and share"** (or "Apps"), and click **"Install page as app"**.
-* **Mobile (iOS/Android):** Open Moonitor in Safari or Chrome, tap the "Share" icon (iOS) or the three-dot "Menu" (Android), and select **"Add to Home Screen"**.
+> *💡 Note on Local Network Installation:**
+> Because Moonitor runs locally over standard HTTP rather than HTTPS, modern browsers hide the automatic "Install App" button in the address bar. You will need to use the browser's built-in menus to install it.
 
-> **💡 Troubleshooting: "This app cannot be installed" / Missing Install Button**
-> Because Moonitor runs locally over standard HTTP, modern browsers (like Chrome on Android or Desktop) may flag the connection as insecure and gray out the true "Install" button, only allowing you to create a standard browser shortcut.
-> 
-> **To fix this and force a full app installation:**
-> 1. Type `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (or `edge://flags` for Edge) into your browser's address bar.
-> 2. Change the setting from **Default** to **Enabled**.
-> 3. Type your exact Moonitor address (e.g., `http://192.168.0.215:3366`) into the text box provided.
-> 4. Tap the **Relaunch** button to restart the browser.
-> 5. Navigate back to your Moonitor dashboard and open the menu again. The **Install** option will now be fully enabled!
+**How to install:**
+* **Mobile (iOS/Android):** Open Moonitor in Safari or Chrome, tap the "Share" icon (iOS) or the three-dot "Menu" (Android), and select **"Add to Home Screen"**.
+* **Desktop (Chrome/Edge):** Open the browser's main menu (three dots in the top right), navigate to **"Save and share"** (or "Apps"), and click **"Install page as app"**.
+
+Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
 
 ---
 
