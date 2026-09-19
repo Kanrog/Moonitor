@@ -76,7 +76,7 @@ Once installed, open a browser on your network and navigate to `http://<YOUR_HOS
 
 ## Install as an App (PWA)
 
-## 📱 Install as an App (PWA)
+## Install as an App (PWA)
 
 Moonitor includes full Progressive Web App (PWA) support, allowing you to install it directly to your desktop or mobile home screen as a standalone application. Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
 
@@ -84,7 +84,7 @@ Moonitor includes full Progressive Web App (PWA) support, allowing you to instal
 * **Desktop (Chrome/Edge):** Open the browser's main menu (three dots in the top right), navigate to **"Save and share"** (or "Apps"), and click **"Install page as app"**.
 * **Mobile (iOS/Android):** Open Moonitor in Safari or Chrome, tap the "Share" icon (iOS) or the three-dot "Menu" (Android), and select **"Add to Home Screen"**.
 
-> **💡 Troubleshooting: "This app cannot be installed" / Missing Install Button**
+> **Troubleshooting: "This app cannot be installed" / Missing Install Button**
 > Because Moonitor runs locally over standard HTTP, modern browsers (like Chrome on Android or Desktop) may flag the connection as insecure and gray out the true "Install" button, only allowing you to create a standard browser shortcut.
 > 
 > **To fix this and force a full app installation:**
