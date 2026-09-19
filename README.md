@@ -74,8 +74,10 @@ Once installed, open a browser on your network and navigate to `http://<YOUR_HOS
 
 ---
 
-## Install as an App (PWA)
+> **Note on Moonraker CORS:**
+> Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
+---
 ## Install as an App (PWA)
 
 Moonitor includes full Progressive Web App (PWA) support, allowing you to install it directly to your desktop or mobile home screen as a standalone application. Once installed, Moonitor will run in its own dedicated window without browser tabs or toolbars, giving you a clean, native dashboard experience for your fleet.
@@ -93,11 +95,6 @@ Moonitor includes full Progressive Web App (PWA) support, allowing you to instal
 > 3. Type your exact Moonitor address (e.g., `http://192.168.0.215:3366`) into the text box provided.
 > 4. Tap the **Relaunch** button to restart the browser.
 > 5. Navigate back to your Moonitor dashboard and open the menu again. The **Install** option will now be fully enabled!
-
----
-
-> **Note on Moonraker CORS:**
-> Ensure your `moonraker.conf` allows connections from your local subnet, or Moonraker will block Moonitor's WebSocket requests. Add your local IP range (e.g., `192.168.0.0/16`) to the `trusted_clients` list under the `[authorization]` section.
 
 ---
 
