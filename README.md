@@ -47,6 +47,16 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 
 ---
 
+## ⚡ System Requirements & Performance
+
+Moonitor is built as a true thin-client. The Node.js backend exists solely to serve the static UI files and run local network discovery. All live telemetry, commands, and camera streams are handled directly between your browser and the printer's WebSockets.
+
+Because of this architecture, Moonitor has virtually zero system overhead. In real-world testing, a Moonitor service managing an active fleet of 5 printers consumes roughly **31 MB of RAM** with no memory leaks after over a month of continuous uptime. It can comfortably run directly on an existing Pi or Debian SBC alongside Klipper without impacting your print quality or host performance.
+
+![Moonitor Memory Benchmark](images/memory-benchmark.png)
+
+---
+
 ## Quick Install
 
 You can install Moonitor directly on one of your existing Klipper hosts (like a Raspberry Pi) or a dedicated local home server. 
