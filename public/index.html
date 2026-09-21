@@ -62,7 +62,13 @@
             font-size: 1.4rem;
         }
 
-        .settings-toggle-btn {
+        .header-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .header-icon-btn {
             background: var(--surface);
             color: var(--text);
             border: 1px solid var(--accent);
@@ -73,9 +79,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
         }
-        .settings-toggle-btn:hover {
+        .header-icon-btn:hover {
             background: var(--accent);
             color: var(--bg);
         }
@@ -356,11 +363,13 @@
             background: var(--surface);
             padding: 20px;
             border-radius: 8px;
-            width: 320px;
+            width: 340px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-card h3 { margin: 0 0 5px 0; color: var(--accent); }
 
@@ -383,29 +392,20 @@
             border-color: var(--accent);
         }
 
-        /* Footer GitHub Link */
-        .github-corner-btn {
-            position: fixed;
-            bottom: 10px;
-            right: 15px;
-            background: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--surface);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            text-decoration: none;
+        .custom-color-row {
             display: flex;
             align-items: center;
-            gap: 5px;
-            opacity: 0.7;
-            transition: opacity 0.2s, border-color 0.2s, color 0.2s;
-            z-index: 50;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            gap: 10px;
         }
-        .github-corner-btn:hover {
-            opacity: 1;
-            border-color: var(--accent);
-            color: var(--accent);
+        .custom-color-row input[type="color"] {
+            width: 40px;
+            height: 28px;
+            padding: 0;
+            cursor: pointer;
+            border: none;
+            background: none;
         }
 
 /* Mobile Responsive Layout */
@@ -449,12 +449,15 @@
 </head>
 <body>
     <div class="header-container">
-        <div style="width: 40px;"></div>
+        <div style="width: 70px;"></div>
         <div class="header-title">
             <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
             <h1>Moonitor</h1>
         </div>
-        <button class="settings-toggle-btn" onclick="openSettingsModal()" title="Settings & Themes">⚙️</button>
+        <div class="header-actions">
+            <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="header-icon-btn" title="View Source on GitHub">🐙</a>
+            <button class="header-icon-btn" onclick="openSettingsModal()" title="Settings & Themes">⚙️</button>
+        </div>
     </div>
     
     <div class="header-controls">
@@ -523,25 +526,33 @@
                 <button class="theme-btn" onclick="applyPresetTheme('cyberpunk')">⚡ Cyberpunk Neon</button>
                 <button class="theme-btn" onclick="applyPresetTheme('emerald')">🌲 Emerald Mint</button>
                 <button class="theme-btn" onclick="applyPresetTheme('sunset')">🔥 Sunset Ember</button>
-                <button class="theme-btn" onclick="applyPresetTheme('monolith')" style="grid-column: span 2;">⬛ Monolith Minimal</button>
+                <button class="theme-btn" onclick="applyPresetTheme('monolith')">⬛ Monolith</button>
+                <button class="theme-btn" onclick="applyPresetTheme('purple')">🔮 Purple Vibe</button>
             </div>
 
-            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 5px;">Custom Accent Color:</label>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="color" id="custom-color-picker" value="#89b4fa" style="width: 50px; height: 35px; padding: 0; cursor: pointer; border: none; background: none;" oninput="applyCustomColor(this.value)">
-                <span style="font-size: 0.8rem; color: var(--text);">Pick your own accent color from the color wheel.</span>
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 5px;">Custom Color Palette:</label>
+            <div class="custom-color-row">
+                <span>Background:</span>
+                <input type="color" id="picker-bg" value="#1e1e2e" oninput="triggerCustomUpdate()">
+            </div>
+            <div class="custom-color-row">
+                <span>Text Color:</span>
+                <input type="color" id="picker-text" value="#cdd6f4" oninput="triggerCustomUpdate()">
+            </div>
+            <div class="custom-color-row">
+                <span>Button Color:</span>
+                <input type="color" id="picker-accent" value="#89b4fa" oninput="triggerCustomUpdate()">
+            </div>
+            <div class="custom-color-row">
+                <span>Outline / Surface:</span>
+                <input type="color" id="picker-surface" value="#313244" oninput="triggerCustomUpdate()">
             </div>
 
-            <div style="display: flex; gap: 8px; margin-top: 15px;">
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
                 <button onclick="closeSettingsModal()" style="width: 100%;">Close</button>
             </div>
         </div>
     </div>
-
-    <!-- GitHub Link Footer Corner -->
-    <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="github-corner-btn" title="View Source on GitHub">
-        <span>GitHub</span>
-    </a>
 
     <script src="app.js"></script>
 </body>
