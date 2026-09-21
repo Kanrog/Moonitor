@@ -68,21 +68,22 @@
             align-items: center;
         }
 
-        .header-icon-btn {
+        .header-text-btn {
             background: var(--surface);
             color: var(--text);
             border: 1px solid var(--accent);
             border-radius: 6px;
             padding: 6px 10px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
             transition: background 0.2s, color 0.2s;
         }
-        .header-icon-btn:hover {
+        .header-text-btn:hover {
             background: var(--accent);
             color: var(--bg);
         }
@@ -449,14 +450,14 @@
 </head>
 <body>
     <div class="header-container">
-        <div style="width: 70px;"></div>
+        <div style="width: 140px;"></div>
         <div class="header-title">
             <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
             <h1>Moonitor</h1>
         </div>
         <div class="header-actions">
-            <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="header-icon-btn" title="View Source on GitHub">🐙</a>
-            <button class="header-icon-btn" onclick="openSettingsModal()" title="Settings & Themes">⚙️</button>
+            <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="header-text-btn" title="View Source on GitHub">GitHub</a>
+            <button class="header-text-btn" onclick="openSettingsModal()" title="Settings & Themes">Settings</button>
         </div>
     </div>
     

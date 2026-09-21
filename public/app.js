@@ -7,13 +7,14 @@ if ('serviceWorker' in navigator) {
 let sockets = {};
 let foundDiscoveredPrinters = [];
 
-// Preset Theme Configurations (5 distinct themes)
+// 6 Preset Themes (Balanced 2x3 grid)
 const THEME_PRESETS = {
     moonitor: { bg: '#1e1e2e', surface: '#313244', accent: '#89b4fa', text: '#cdd6f4' },
     cyberpunk: { bg: '#09090b', surface: '#18181b', accent: '#f43f5e', text: '#fafafa' },
     emerald: { bg: '#064e3b', surface: '#065f46', accent: '#34d399', text: '#ecfdf5' },
     sunset: { bg: '#291b1a', surface: '#3d2624', accent: '#fb923c', text: '#ffedd5' },
-    monolith: { bg: '#111111', surface: '#222222', accent: '#e2e8f0', text: '#f8fafc' }
+    monolith: { bg: '#111111', surface: '#222222', accent: '#e2e8f0', text: '#f8fafc' },
+    purple: { bg: '#1e1b4b', surface: '#312e81', accent: '#c084fc', text: '#f3e8ff' }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,15 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadSavedTheme() {
     const savedType = localStorage.getItem('moonitor-theme-type');
-    const savedCustomColor = localStorage.getItem('moonitor-custom-color');
 
-    if (savedType === 'custom' && savedCustomColor) {
-        applyCustomColor(savedCustomColor, false);
-        document.getElementById('custom-color-picker').value = savedCustomColor;
+    if (savedType === 'custom') {
+        const customTheme = {
+            bg: localStorage.getItem('moonitor-custom-bg') || '#1e1e2e',
+            surface: localStorage.getItem('moonitor-custom-surface') || '#313244',
+            accent: localStorage.getItem('moonitor-custom-accent') || '#89b4fa',
+            text: localStorage.getItem('moonitor-custom-text') || '#cdd6f4'
+        };
+        applyThemeValues(customTheme, false);
+        setPickerValues(customTheme);
     } else if (savedType && THEME_PRESETS[savedType]) {
         applyPresetTheme(savedType, false);
     } else {
-        // Default fallback
         applyPresetTheme('moonitor', false);
     }
 }
@@ -58,6 +63,15 @@ function applyPresetTheme(themeKey, save = true) {
     const theme = THEME_PRESETS[themeKey];
     if (!theme) return;
 
+    applyThemeValues(theme, save);
+    setPickerValues(theme);
+
+    if (save) {
+        localStorage.setItem('moonitor-theme-type', themeKey);
+    }
+}
+
+function applyThemeValues(theme, save = true) {
     const root = document.documentElement;
     root.style.setProperty('--bg', theme.bg);
     root.style.setProperty('--surface', theme.surface);
@@ -65,27 +79,30 @@ function applyPresetTheme(themeKey, save = true) {
     root.style.setProperty('--text', theme.text);
     root.style.setProperty('--overlay-bg', hexToRgba(theme.bg, 0.92));
 
-    document.getElementById('custom-color-picker').value = theme.accent;
-
-    if (save) {
-        localStorage.setItem('moonitor-theme-type', themeKey);
-        localStorage.removeItem('moonitor-custom-color');
-    }
-}
-
-function applyCustomColor(hexColor, save = true) {
-    const root = document.documentElement;
-    root.style.setProperty('--accent', hexColor);
-    root.style.setProperty('--overlay-bg', hexToRgba(getCssVariable('--bg') || '#1e1e2e', 0.92));
-
     if (save) {
         localStorage.setItem('moonitor-theme-type', 'custom');
-        localStorage.setItem('moonitor-custom-color', hexColor);
+        localStorage.setItem('moonitor-custom-bg', theme.bg);
+        localStorage.setItem('moonitor-custom-surface', theme.surface);
+        localStorage.setItem('moonitor-custom-accent', theme.accent);
+        localStorage.setItem('moonitor-custom-text', theme.text);
     }
 }
 
-function getCssVariable(variable) {
-    return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+function triggerCustomUpdate() {
+    const customTheme = {
+        bg: document.getElementById('picker-bg').value,
+        surface: document.getElementById('picker-surface').value,
+        accent: document.getElementById('picker-accent').value,
+        text: document.getElementById('picker-text').value
+    };
+    applyThemeValues(customTheme, true);
+}
+
+function setPickerValues(theme) {
+    document.getElementById('picker-bg').value = theme.bg;
+    document.getElementById('picker-surface').value = theme.surface;
+    document.getElementById('picker-accent').value = theme.accent;
+    document.getElementById('picker-text').value = theme.text;
 }
 
 function hexToRgba(hex, alpha) {
