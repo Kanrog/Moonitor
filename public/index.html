@@ -383,6 +383,31 @@
             border-color: var(--accent);
         }
 
+        /* Footer GitHub Link */
+        .github-corner-btn {
+            position: fixed;
+            bottom: 10px;
+            right: 15px;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--surface);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0.7;
+            transition: opacity 0.2s, border-color 0.2s, color 0.2s;
+            z-index: 50;
+        }
+        .github-corner-btn:hover {
+            opacity: 1;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
 /* Mobile Responsive Layout */
 @media (max-width: 768px) {
     #printer-grid {
@@ -424,7 +449,7 @@
 </head>
 <body>
     <div class="header-container">
-        <div style="width: 40px;"></div> <!-- Spacer for balance -->
+        <div style="width: 40px;"></div>
         <div class="header-title">
             <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
             <h1>Moonitor</h1>
@@ -512,6 +537,11 @@
             </div>
         </div>
     </div>
+
+    <!-- GitHub Link Footer Corner -->
+    <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="github-corner-btn" title="View Source on GitHub">
+        <span>GitHub</span>
+    </a>
 
     <script src="app.js"></script>
 </body>
