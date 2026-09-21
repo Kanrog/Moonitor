@@ -7,14 +7,14 @@ if ('serviceWorker' in navigator) {
 let sockets = {};
 let foundDiscoveredPrinters = [];
 
-// 6 Preset Themes (Balanced 2x3 grid)
+// 6 Preset Themes including btnText configurations
 const THEME_PRESETS = {
-    moonitor: { bg: '#1e1e2e', surface: '#313244', accent: '#89b4fa', text: '#cdd6f4' },
-    cyberpunk: { bg: '#09090b', surface: '#18181b', accent: '#f43f5e', text: '#fafafa' },
-    emerald: { bg: '#064e3b', surface: '#065f46', accent: '#34d399', text: '#ecfdf5' },
-    sunset: { bg: '#291b1a', surface: '#3d2624', accent: '#fb923c', text: '#ffedd5' },
-    monolith: { bg: '#111111', surface: '#222222', accent: '#e2e8f0', text: '#f8fafc' },
-    purple: { bg: '#1e1b4b', surface: '#312e81', accent: '#c084fc', text: '#f3e8ff' }
+    moonitor: { bg: '#1e1e2e', surface: '#313244', accent: '#89b4fa', text: '#cdd6f4', btnText: '#1e1e2e' },
+    cyberpunk: { bg: '#09090b', surface: '#18181b', accent: '#f43f5e', text: '#fafafa', btnText: '#09090b' },
+    emerald: { bg: '#064e3b', surface: '#065f46', accent: '#34d399', text: '#ecfdf5', btnText: '#064e3b' },
+    sunset: { bg: '#291b1a', surface: '#3d2624', accent: '#fb923c', text: '#ffedd5', btnText: '#291b1a' },
+    monolith: { bg: '#111111', surface: '#222222', accent: '#e2e8f0', text: '#f8fafc', btnText: '#111111' },
+    purple: { bg: '#1e1b4b', surface: '#312e81', accent: '#c084fc', text: '#f3e8ff', btnText: '#1e1b4b' }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,7 +48,8 @@ function loadSavedTheme() {
             bg: localStorage.getItem('moonitor-custom-bg') || '#1e1e2e',
             surface: localStorage.getItem('moonitor-custom-surface') || '#313244',
             accent: localStorage.getItem('moonitor-custom-accent') || '#89b4fa',
-            text: localStorage.getItem('moonitor-custom-text') || '#cdd6f4'
+            text: localStorage.getItem('moonitor-custom-text') || '#cdd6f4',
+            btnText: localStorage.getItem('moonitor-custom-btn-text') || '#1e1e2e'
         };
         applyThemeValues(customTheme, false);
         setPickerValues(customTheme);
@@ -77,6 +78,7 @@ function applyThemeValues(theme, save = true) {
     root.style.setProperty('--surface', theme.surface);
     root.style.setProperty('--accent', theme.accent);
     root.style.setProperty('--text', theme.text);
+    root.style.setProperty('--btn-text', theme.btnText);
     root.style.setProperty('--overlay-bg', hexToRgba(theme.bg, 0.92));
 
     if (save) {
@@ -85,6 +87,7 @@ function applyThemeValues(theme, save = true) {
         localStorage.setItem('moonitor-custom-surface', theme.surface);
         localStorage.setItem('moonitor-custom-accent', theme.accent);
         localStorage.setItem('moonitor-custom-text', theme.text);
+        localStorage.setItem('moonitor-custom-btn-text', theme.btnText);
     }
 }
 
@@ -93,7 +96,8 @@ function triggerCustomUpdate() {
         bg: document.getElementById('picker-bg').value,
         surface: document.getElementById('picker-surface').value,
         accent: document.getElementById('picker-accent').value,
-        text: document.getElementById('picker-text').value
+        text: document.getElementById('picker-text').value,
+        btnText: document.getElementById('picker-btn-text').value
     };
     applyThemeValues(customTheme, true);
 }
@@ -103,6 +107,7 @@ function setPickerValues(theme) {
     document.getElementById('picker-surface').value = theme.surface;
     document.getElementById('picker-accent').value = theme.accent;
     document.getElementById('picker-text').value = theme.text;
+    document.getElementById('picker-btn-text').value = theme.btnText;
 }
 
 function hexToRgba(hex, alpha) {
