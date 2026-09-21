@@ -33,12 +33,20 @@
             overflow: hidden;
         }
 
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
         .header-title {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 12px;
-            margin-bottom: 10px;
+            flex: 1;
         }
 
         .header-logo {
@@ -52,6 +60,24 @@
             color: var(--accent); 
             margin: 0;
             font-size: 1.4rem;
+        }
+
+        .settings-toggle-btn {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .settings-toggle-btn:hover {
+            background: var(--accent);
+            color: var(--bg);
         }
 
         .header-controls { 
@@ -338,40 +364,57 @@
         }
         .modal-card h3 { margin: 0 0 5px 0; color: var(--accent); }
 
+        .theme-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        .theme-btn {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--surface);
+            padding: 6px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .theme-btn:hover {
+            border-color: var(--accent);
+        }
+
 /* Mobile Responsive Layout */
 @media (max-width: 768px) {
     #printer-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem; /* Adds breathing room between stacked cards */
+        gap: 1.5rem;
     }
 
     .card {
-        min-height: 380px; /* Forces the card to be tall enough to hold all controls */
-        overflow: hidden; /* Strictly prevents active controls from spilling over into the next card */
+        min-height: 380px;
+        overflow: hidden;
     }
 
     .webcam-feed {
         height: 100%;
         width: 100%;
-        object-fit: cover; /* Ensures the camera feed scales up to fill the taller card space without distorting */
+        object-fit: cover;
     }
 
     .card-overlay {
         max-height: 100%;
-        overflow-y: auto; /* Enables vertical scrolling inside the overlay for ultra-small phone screens */
+        overflow-y: auto;
         box-sizing: border-box;
     }
 }
 
 /* Touch Device Overlay Logic */
 @media (hover: none) {
-    /* Disable the hover effect entirely on touch screens */
     .card:hover .card-overlay {
         opacity: 0;
         pointer-events: none;
     }
     
-    /* Apply visibility only when our new tap-to-toggle class is active */
     .card.touch-active .card-overlay {
         opacity: 1;
         pointer-events: auto;
@@ -380,9 +423,13 @@
     </style>
 </head>
 <body>
-    <div class="header-title">
-        <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
-        <h1>Moonitor</h1>
+    <div class="header-container">
+        <div style="width: 40px;"></div> <!-- Spacer for balance -->
+        <div class="header-title">
+            <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
+            <h1>Moonitor</h1>
+        </div>
+        <button class="settings-toggle-btn" onclick="openSettingsModal()" title="Settings & Themes">⚙️</button>
     </div>
     
     <div class="header-controls">
@@ -405,6 +452,7 @@
 
     <div class="grid" id="printer-grid"></div>
 
+    <!-- Edit Printer Modal -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal-card">
             <h3>Edit Printer</h3>
@@ -435,6 +483,32 @@
             <div style="display: flex; gap: 8px; margin-top: 10px;">
                 <button onclick="savePrinterEdit()" style="flex: 1;">Save</button>
                 <button onclick="closeEditModal()" style="flex: 1; background: #45475a; color: #fff;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings & Themes Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-card">
+            <h3>Appearance & Themes</h3>
+            
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text);">Preset Themes:</label>
+            <div class="theme-buttons-grid">
+                <button class="theme-btn" onclick="applyPresetTheme('moonitor')">🌙 Moonitor Dark</button>
+                <button class="theme-btn" onclick="applyPresetTheme('cyberpunk')">⚡ Cyberpunk Neon</button>
+                <button class="theme-btn" onclick="applyPresetTheme('emerald')">🌲 Emerald Mint</button>
+                <button class="theme-btn" onclick="applyPresetTheme('sunset')">🔥 Sunset Ember</button>
+                <button class="theme-btn" onclick="applyPresetTheme('monolith')" style="grid-column: span 2;">⬛ Monolith Minimal</button>
+            </div>
+
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 5px;">Custom Accent Color:</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="color" id="custom-color-picker" value="#89b4fa" style="width: 50px; height: 35px; padding: 0; cursor: pointer; border: none; background: none;" oninput="applyCustomColor(this.value)">
+                <span style="font-size: 0.8rem; color: var(--text);">Pick your own accent color from the color wheel.</span>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button onclick="closeSettingsModal()" style="width: 100%;">Close</button>
             </div>
         </div>
     </div>
