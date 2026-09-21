@@ -34,6 +34,7 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 * **Essential Controls:** Start, pause, cancel, adjust Z-offset, set temperatures, home axes, and trigger custom macros across your entire fleet from one window.
 * **Persistent Storage:** Saves your fleet configuration locally so your dashboard is exactly how you left it after a reboot.
 * **Flexible Camera Controls:** Enable, disable, rotate (0°, 90°, 180°, 270°), and horizontally mirror your webcam feeds directly from the printer settings to fit any enclosure orientation.
+* **Advanced Theme Engine:** Includes 6 preset color themes (Moonitor Dark, Cyberpunk Neon, Emerald Mint, Sunset Ember, Monolith, and Purple Vibe) plus a fully customizable color palette to adjust backgrounds, text, buttons, button text, and outlines with persistent `localStorage` saving.
 
 > ### Creality K2 / K2 Plus Camera Note
 > The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
@@ -92,7 +93,7 @@ Moonitor includes full Progressive Web App (PWA) support, allowing you to instal
 > **To fix this and force a full app installation:**
 > 1. Type `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (or `edge://flags` for Edge) into your browser's address bar.
 > 2. Change the setting from **Default** to **Enabled**.
-> 3. Type your exact Moonitor address (e.g., `http://192.168.0.215:3366`) into the text box provided.
+> 3. Type your exact Moonitor address (e.g., `[http://192.168.0.215:3366](http://192.168.0.215:3366)`) into the text box provided.
 > 4. Tap the **Relaunch** button to restart the browser.
 > 5. Navigate back to your Moonitor dashboard and open the menu again. The **Install** option will now be fully enabled!
 
