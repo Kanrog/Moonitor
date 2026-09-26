@@ -194,22 +194,15 @@
             flex: 1;
         }
 
+        /* Flexbox Wrap Grid Replacement to Prevent Row Collapse */
         .grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
+            display: flex; 
+            flex-wrap: wrap;
             gap: 12px; 
             flex: 1;
             min-height: 0;
             overflow-y: auto;
             align-content: start;
-        }
-
-        @media (max-width: 1600px) {
-            .grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
         }
 
         .card { 
@@ -222,7 +215,23 @@
             flex-direction: column;
             border: 1px solid var(--surface);
             aspect-ratio: 16 / 9;
-            width: 100%;
+            width: calc(33.333% - 8px); /* Exactly 3 columns accounting for 12px gap */
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1600px) {
+            .card { width: calc(50% - 6px); } /* 2 columns */
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                gap: 1.5rem;
+            }
+            .card { 
+                width: 100%; /* 1 column */
+                min-height: 380px; 
+                overflow: hidden; 
+            }
         }
 
         .webcam-feed {
@@ -394,31 +403,6 @@
             border: none;
             background: none;
         }
-
-/* Mobile Responsive Layout */
-@media (max-width: 768px) {
-    #printer-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .card {
-        min-height: 380px;
-        overflow: hidden;
-    }
-
-    .webcam-feed {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
-    }
-
-    .card-overlay {
-        max-height: 100%;
-        overflow-y: auto;
-        box-sizing: border-box;
-    }
-}
 
 /* Touch Device Overlay Logic */
 @media (hover: none) {

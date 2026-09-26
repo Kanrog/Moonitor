@@ -374,9 +374,6 @@ function renderPrinters(printers) {
         const safeIp = printer.ip;
 
         card.innerHTML = `
-            <!-- Normal-flow structural spacer to enforce 16:9 grid row height and prevent collapsing -->
-            <div style="aspect-ratio: 16/9; width: 100%; visibility: hidden; pointer-events: none;"></div>
-
             ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
 
             <div class="card-top-bar">
