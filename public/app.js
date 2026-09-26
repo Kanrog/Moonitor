@@ -11,6 +11,12 @@ let currentScreen = 0;
 let highlightedIp = null;
 const PRINTERS_PER_SCREEN = 9;
 
+// Cycle Mode State Variables
+let isCycling = false;
+let cycleIntervalId = null;
+let cycleSecondsRemaining = 15;
+let isHoveredOrActive = false;
+
 // 6 Preset Themes including btnText configurations
 const THEME_PRESETS = {
     moonitor: { bg: '#1e1e2e', surface: '#313244', accent: '#89b4fa', text: '#cdd6f4', btnText: '#1e1e2e' },
@@ -23,6 +29,7 @@ const THEME_PRESETS = {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadSavedTheme();
+    loadCycleIntervalSetting();
     loadPrinters();
 
     // Mobile tap-to-close logic: Closes the overlay if you tap outside of it on touch devices
@@ -42,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- Theme Management Functions ---
+// --- Theme & Settings Management ---
 
 function loadSavedTheme() {
     const savedType = localStorage.getItem('moonitor-theme-type');
@@ -61,6 +68,21 @@ function loadSavedTheme() {
         applyPresetTheme(savedType, false);
     } else {
         applyPresetTheme('moonitor', false);
+    }
+}
+
+function loadCycleIntervalSetting() {
+    const saved = localStorage.getItem('moonitor-cycle-interval');
+    const val = saved ? parseInt(saved) : 15;
+    const input = document.getElementById('setting-cycle-interval');
+    if (input) input.value = val;
+    return val;
+}
+
+function saveCycleInterval() {
+    const input = document.getElementById('setting-cycle-interval');
+    if (input) {
+        localStorage.setItem('moonitor-cycle-interval', input.value);
     }
 }
 
@@ -129,7 +151,7 @@ function closeSettingsModal() {
     document.getElementById('settings-modal').style.display = 'none';
 }
 
-// --- Printer Logic ---
+// --- Printer & Cycle Logic ---
 
 async function loadPrinters() {
     const res = await fetch('/api/printers');
@@ -153,7 +175,72 @@ function nextScreen() {
 }
 
 function toggleHighlight(ip) {
+    if (isCycling) {
+        stopCycleMode();
+    }
     highlightedIp = (highlightedIp === ip) ? null : ip;
+    renderPrinters();
+}
+
+function toggleCycleMode() {
+    if (cachedPrinters.length === 0) {
+        alert("No printers available to cycle.");
+        return;
+    }
+
+    isCycling = !isCycling;
+
+    if (isCycling) {
+        if (!highlightedIp) {
+            highlightedIp = cachedPrinters[0].ip;
+        }
+        cycleSecondsRemaining = loadCycleIntervalSetting();
+        updateCycleButtonText();
+
+        if (cycleIntervalId) clearInterval(cycleIntervalId);
+        cycleIntervalId = setInterval(() => {
+            if (isHoveredOrActive) return; // Pause countdown while interacting
+
+            cycleSecondsRemaining--;
+            if (cycleSecondsRemaining <= 0) {
+                cycleSecondsRemaining = loadCycleIntervalSetting();
+                moveToNextPrinterInCycle();
+            }
+            updateCycleButtonText();
+        }, 1000);
+
+        renderPrinters();
+    } else {
+        stopCycleMode();
+        renderPrinters();
+    }
+}
+
+function stopCycleMode() {
+    isCycling = false;
+    if (cycleIntervalId) {
+        clearInterval(cycleIntervalId);
+        cycleIntervalId = null;
+    }
+    const btn = document.getElementById('cycle-btn');
+    if (btn) btn.innerHTML = 'CYCLE ⚪';
+}
+
+function updateCycleButtonText() {
+    const btn = document.getElementById('cycle-btn');
+    if (!btn) return;
+    if (isCycling) {
+        btn.innerHTML = `CYCLE 🟢 ${cycleSecondsRemaining}`;
+    } else {
+        btn.innerHTML = 'CYCLE ⚪';
+    }
+}
+
+function moveToNextPrinterInCycle() {
+    if (cachedPrinters.length === 0) return;
+    const currentIndex = cachedPrinters.findIndex(p => p.ip === highlightedIp);
+    const nextIndex = (currentIndex + 1) % cachedPrinters.length;
+    highlightedIp = cachedPrinters[nextIndex].ip;
     renderPrinters();
 }
 
@@ -380,6 +467,10 @@ function createPrinterCard(printer) {
     if (printer.ip === highlightedIp) {
         card.classList.add('highlighted-card');
     }
+
+    // Auto-pause cycle timer when hovering over the card
+    card.addEventListener('mouseenter', () => { if (isCycling) isHoveredOrActive = true; });
+    card.addEventListener('mouseleave', () => { if (isCycling) isHoveredOrActive = false; });
     
     const camPath = printer.webcamPath || '/webcam/?action=stream';
     const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
@@ -509,7 +600,7 @@ function renderPrinters() {
     if (count === 1) grid.classList.add('layout-1');
     else if (count === 2) grid.classList.add('layout-2');
     else if (count <= 4) grid.classList.add('layout-3-4');
-    else if (count <= 5 && count <= 6) grid.classList.add('layout-5-6');
+    else if (count <= 6) grid.classList.add('layout-5-6');
     else grid.classList.add('layout-7-9');
 
     pagePrinters.forEach(printer => {

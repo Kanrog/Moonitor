@@ -476,6 +476,7 @@
             <h1>Moonitor</h1>
         </div>
         <div class="header-actions">
+            <button id="cycle-btn" onclick="toggleCycleMode()" title="Toggle Auto-Cycle Highlight Mode">CYCLE ⚪</button>
             <a href="https://github.com/Kanrog/Moonitor" target="_blank" class="header-btn-link" title="View Source on GitHub">GitHub</a>
             <button onclick="openSettingsModal()" title="Settings & Themes">Settings</button>
         </div>
@@ -542,9 +543,15 @@
     <!-- Settings & Themes Modal -->
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-card">
-            <h3>Appearance & Themes</h3>
+            <h3>Settings & Themes</h3>
             
-            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text);">Preset Themes:</label>
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text);">Auto-Cycle Settings:</label>
+            <div class="custom-color-row">
+                <span>Cycle Interval (sec):</span>
+                <input type="number" id="setting-cycle-interval" value="15" min="3" max="300" onchange="saveCycleInterval()" style="width: 60px; text-align: center;">
+            </div>
+
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 5px;">Preset Themes:</label>
             <div class="theme-buttons-grid">
                 <button class="theme-btn" onclick="applyPresetTheme('moonitor')">🌙 Moonitor Dark</button>
                 <button class="theme-btn" onclick="applyPresetTheme('cyberpunk')">⚡ Cyberpunk Neon</button>
