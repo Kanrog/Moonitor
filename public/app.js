@@ -6,6 +6,9 @@ if ('serviceWorker' in navigator) {
 
 let sockets = {};
 let foundDiscoveredPrinters = [];
+let cachedPrinters = [];
+let currentScreen = 0;
+const PRINTERS_PER_SCREEN = 9;
 
 // 6 Preset Themes including btnText configurations
 const THEME_PRESETS = {
@@ -129,8 +132,23 @@ function closeSettingsModal() {
 
 async function loadPrinters() {
     const res = await fetch('/api/printers');
-    const printers = await res.json();
-    renderPrinters(printers);
+    cachedPrinters = await res.json();
+    
+    // Ensure currentScreen is valid if printers were removed
+    const totalScreens = Math.max(1, Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN));
+    if (currentScreen >= totalScreens) {
+        currentScreen = totalScreens - 1;
+    }
+
+    renderPrinters();
+}
+
+function nextScreen() {
+    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
+    if (totalScreens > 1) {
+        currentScreen = (currentScreen + 1) % totalScreens;
+        renderPrinters();
+    }
 }
 
 async function addManualPrinter() {
@@ -350,11 +368,25 @@ function toggleOverlay(element, ip) {
     }
 }
 
-function renderPrinters(printers) {
+function renderPrinters() {
     const grid = document.getElementById('printer-grid');
     grid.className = 'grid'; // Reset classes
 
-    const count = printers.length;
+    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
+    const arrowBtn = document.getElementById('screen-arrow-btn');
+
+    if (totalScreens > 1) {
+        arrowBtn.style.display = 'flex';
+        arrowBtn.title = `Switch Screen (${currentScreen + 1}/${totalScreens})`;
+    } else {
+        arrowBtn.style.display = 'none';
+        currentScreen = 0;
+    }
+
+    const startIndex = currentScreen * PRINTERS_PER_SCREEN;
+    const pagePrinters = cachedPrinters.slice(startIndex, startIndex + PRINTERS_PER_SCREEN);
+
+    const count = pagePrinters.length;
     if (count === 1) grid.classList.add('layout-1');
     else if (count === 2) grid.classList.add('layout-2');
     else if (count <= 4) grid.classList.add('layout-3-4');
@@ -363,7 +395,7 @@ function renderPrinters(printers) {
 
     grid.innerHTML = '';
 
-    printers.forEach(printer => {
+    pagePrinters.forEach(printer => {
         const card = document.createElement('div');
         card.className = 'card';
         
