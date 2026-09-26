@@ -8,6 +8,7 @@ let sockets = {};
 let foundDiscoveredPrinters = [];
 let cachedPrinters = [];
 let currentScreen = 0;
+let highlightedIp = null;
 const PRINTERS_PER_SCREEN = 9;
 
 // 6 Preset Themes including btnText configurations
@@ -149,6 +150,11 @@ function nextScreen() {
         currentScreen = (currentScreen + 1) % totalScreens;
         renderPrinters();
     }
+}
+
+function toggleHighlight(ip) {
+    highlightedIp = (highlightedIp === ip) ? null : ip;
+    renderPrinters();
 }
 
 async function addManualPrinter() {
@@ -368,12 +374,125 @@ function toggleOverlay(element, ip) {
     }
 }
 
+function createPrinterCard(printer) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    if (printer.ip === highlightedIp) {
+        card.classList.add('highlighted-card');
+    }
+    
+    const camPath = printer.webcamPath || '/webcam/?action=stream';
+    const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
+    const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
+
+    const isCamEnabled = printer.cameraEnabled !== false;
+    const rotation = printer.rotation || 0;
+    const mirror = printer.mirror ? -1 : 1;
+    
+    let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
+    if (rotation === 90 || rotation === 270) {
+        transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
+    }
+
+    const safeIp = printer.ip;
+    const isHighlighted = (printer.ip === highlightedIp);
+
+    card.innerHTML = `
+        ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
+
+        <div class="card-top-bar">
+            <h3>${printer.name}</h3>
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
+                <button class="icon-btn" onclick="toggleHighlight('${safeIp}')" title="${isHighlighted ? 'Exit Highlight' : 'Highlight Printer'}">${isHighlighted ? '⭐' : '🔍'}</button>
+                <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
+                <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
+                <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
+            </div>
+        </div>
+
+        <div class="card-overlay" onmouseenter="fetchMacros('${printer.ip}')">
+            <div class="controls-row">
+                <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
+                <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
+                <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
+            </div>
+
+            <div class="controls-row">
+                <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
+                <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
+                <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
+                <button class="danger" onclick="sendGcode('${printer.ip}', 'M84')">Motors Off</button>
+            </div>
+            
+            <div class="controls-row" style="align-items: center;">
+                <span style="font-size: 0.7rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
+            </div>
+
+            <div class="controls-row">
+                <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
+                <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
+            </div>
+            
+            <div class="controls-row">
+                <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
+                <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
+            </div>
+
+            <div class="controls-row">
+                <select id="macro-select-${printer.ip}">
+                    <option value="">Select Macro...</option>
+                </select>
+                <button onclick="runSelectedMacro('${printer.ip}')">Run</button>
+            </div>
+            
+            <div class="temp-footer">
+                <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
+                <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
+            </div>
+        </div>
+    `;
+
+    connectWebSocket(printer);
+    return card;
+}
+
 function renderPrinters() {
     const grid = document.getElementById('printer-grid');
     grid.className = 'grid'; // Reset classes
+    grid.innerHTML = '';
 
-    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
     const arrowBtn = document.getElementById('screen-arrow-btn');
+
+    // If a printer is highlighted, render focus mode layout
+    const highlightedPrinter = cachedPrinters.find(p => p.ip === highlightedIp);
+
+    if (highlightedPrinter) {
+        grid.classList.add('has-focus');
+        arrowBtn.style.display = 'none';
+
+        // 1. Render Big Highlighted Card
+        grid.appendChild(createPrinterCard(highlightedPrinter));
+
+        // 2. Render Bottom Row Strip for other printers
+        const otherPrinters = cachedPrinters.filter(p => p.ip !== highlightedIp);
+        if (otherPrinters.length > 0) {
+            const strip = document.createElement('div');
+            strip.className = 'focus-bottom-strip';
+            otherPrinters.forEach(printer => {
+                strip.appendChild(createPrinterCard(printer));
+            });
+            grid.appendChild(strip);
+        }
+        return;
+    }
+
+    // Otherwise, render normal screen pagination layout
+    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
 
     if (totalScreens > 1) {
         arrowBtn.style.display = 'flex';
@@ -390,90 +509,11 @@ function renderPrinters() {
     if (count === 1) grid.classList.add('layout-1');
     else if (count === 2) grid.classList.add('layout-2');
     else if (count <= 4) grid.classList.add('layout-3-4');
-    else if (count <= 6) grid.classList.add('layout-5-6');
+    else if (count <= 5 && count <= 6) grid.classList.add('layout-5-6');
     else grid.classList.add('layout-7-9');
 
-    grid.innerHTML = '';
-
     pagePrinters.forEach(printer => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        
-        const camPath = printer.webcamPath || '/webcam/?action=stream';
-        const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
-        const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
-
-        const isCamEnabled = printer.cameraEnabled !== false;
-        const rotation = printer.rotation || 0;
-        const mirror = printer.mirror ? -1 : 1;
-        
-        let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
-        if (rotation === 90 || rotation === 270) {
-            transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
-        }
-
-        const safeIp = printer.ip;
-
-        card.innerHTML = `
-            ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
-
-            <div class="card-top-bar">
-                <h3>${printer.name}</h3>
-                <div style="display: flex; gap: 4px; align-items: center;">
-                    <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
-                    <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
-                    <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
-                </div>
-            </div>
-
-            <div class="card-overlay" onmouseenter="fetchMacros('${printer.ip}')">
-                <div class="controls-row">
-                    <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
-                    <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
-                    <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
-                </div>
-
-                <div class="controls-row">
-                    <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
-                    <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
-                    <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
-                    <button class="danger" onclick="sendGcode('${printer.ip}', 'M84')">Motors Off</button>
-                </div>
-                
-                <div class="controls-row" style="align-items: center;">
-                    <span style="font-size: 0.7rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
-                </div>
-
-                <div class="controls-row">
-                    <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
-                    <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
-                </div>
-                
-                <div class="controls-row">
-                    <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
-                    <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
-                </div>
-
-                <div class="controls-row">
-                    <select id="macro-select-${printer.ip}">
-                        <option value="">Select Macro...</option>
-                    </select>
-                    <button onclick="runSelectedMacro('${printer.ip}')">Run</button>
-                </div>
-                
-                <div class="temp-footer">
-                    <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
-                    <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
-                </div>
-            </div>
-        `;
-        grid.appendChild(card);
-        connectWebSocket(printer);
+        grid.appendChild(createPrinterCard(printer));
     });
 }
 
