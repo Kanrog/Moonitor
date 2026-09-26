@@ -194,16 +194,22 @@
             flex: 1;
         }
 
-        /* Flexbox Wrap Grid Replacement to Prevent Row Collapse */
+        /* Auto-Fitting Viewport Grid */
         .grid { 
-            display: flex; 
-            flex-wrap: wrap;
-            gap: 12px; 
+            display: grid; 
+            gap: 10px; 
             flex: 1;
             min-height: 0;
-            overflow-y: auto;
-            align-content: start;
+            width: 100%;
+            box-sizing: border-box;
         }
+
+        /* Dynamic layout states based on printer count */
+        .grid.layout-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+        .grid.layout-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
+        .grid.layout-3-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid.layout-5-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid.layout-7-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
 
         .card { 
             background: #000; 
@@ -214,24 +220,9 @@
             display: flex;
             flex-direction: column;
             border: 1px solid var(--surface);
-            aspect-ratio: 16 / 9;
-            width: calc(33.333% - 8px); /* Exactly 3 columns accounting for 12px gap */
+            width: 100%;
+            height: 100%;
             box-sizing: border-box;
-        }
-
-        @media (max-width: 1600px) {
-            .card { width: calc(50% - 6px); } /* 2 columns */
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                gap: 1.5rem;
-            }
-            .card { 
-                width: 100%; /* 1 column */
-                min-height: 380px; 
-                overflow: hidden; 
-            }
         }
 
         .webcam-feed {
@@ -252,7 +243,7 @@
             left: 0;
             right: 0;
             background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
-            padding: 8px 12px;
+            padding: 6px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -261,7 +252,7 @@
 
         .card-top-bar h3 { 
             margin: 0; 
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #fff;
             text-shadow: 0 1px 3px rgba(0,0,0,0.9);
             white-space: nowrap;
@@ -272,7 +263,7 @@
         .status-badge { 
             padding: 2px 6px; 
             border-radius: 10px; 
-            font-size: 0.7rem; 
+            font-size: 0.65rem; 
             background: #45475a; 
             color: #fff;
             font-weight: bold;
@@ -284,8 +275,8 @@
             color: var(--text); 
             border: 1px solid #585b70;
             border-radius: 4px;
-            padding: 2px 6px; 
-            font-size: 0.75rem;
+            padding: 2px 5px; 
+            font-size: 0.7rem;
             cursor: pointer;
         }
         .icon-btn:hover { background: var(--surface); color: #fff; }
@@ -305,8 +296,8 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 12px;
-            gap: 6px;
+            padding: 10px;
+            gap: 4px;
             box-sizing: border-box;
             pointer-events: none;
         }
@@ -318,30 +309,30 @@
 
         .controls-row { 
             display: flex; 
-            gap: 5px; 
+            gap: 4px; 
             flex-wrap: wrap; 
         }
 
         .controls-row input, .controls-row select { 
             flex: 1; 
-            min-width: 50px; 
-            padding: 4px 6px;
-            font-size: 0.75rem;
+            min-width: 45px; 
+            padding: 3px 5px;
+            font-size: 0.7rem;
             background: var(--bg);
         }
 
         .controls-row button { 
             flex: 1; 
-            padding: 4px 6px;
-            font-size: 0.7rem;
+            padding: 3px 5px;
+            font-size: 0.65rem;
         }
 
         .temp-footer {
-            font-size: 0.75rem; 
+            font-size: 0.7rem; 
             display: flex; 
             justify-content: space-between; 
             background: var(--bg); 
-            padding: 5px 8px; 
+            padding: 4px 6px; 
             border-radius: 4px;
             border: 1px solid var(--surface);
         }
@@ -404,18 +395,16 @@
             background: none;
         }
 
-/* Touch Device Overlay Logic */
-@media (hover: none) {
-    .card:hover .card-overlay {
-        opacity: 0;
-        pointer-events: none;
-    }
-    
-    .card.touch-active .card-overlay {
-        opacity: 1;
-        pointer-events: auto;
-    }
-}
+        @media (max-width: 768px) {
+            body { overflow-y: auto; height: auto; }
+            .grid { display: flex; flex-direction: column; gap: 1rem; }
+            .card { min-height: 380px; width: 100%; }
+        }
+
+        @media (hover: none) {
+            .card:hover .card-overlay { opacity: 0; pointer-events: none; }
+            .card.touch-active .card-overlay { opacity: 1; pointer-events: auto; }
+        }
     </style>
 </head>
 <body>

@@ -352,6 +352,15 @@ function toggleOverlay(element, ip) {
 
 function renderPrinters(printers) {
     const grid = document.getElementById('printer-grid');
+    grid.className = 'grid'; // Reset classes
+
+    const count = printers.length;
+    if (count === 1) grid.classList.add('layout-1');
+    else if (count === 2) grid.classList.add('layout-2');
+    else if (count <= 4) grid.classList.add('layout-3-4');
+    else if (count <= 6) grid.classList.add('layout-5-6');
+    else grid.classList.add('layout-7-9');
+
     grid.innerHTML = '';
 
     printers.forEach(printer => {
@@ -401,7 +410,7 @@ function renderPrinters(printers) {
                 </div>
                 
                 <div class="controls-row" style="align-items: center;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
                     <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
                     <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
                     <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
