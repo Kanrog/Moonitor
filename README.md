@@ -6,7 +6,7 @@
 
 **A lightweight, zero-latency fleet dashboard for Klipper and Moonraker.**
 
-Moonitor is a unified browser interface designed to let you monitor and control multiple 3D printers from a single screen.
+Moonitor is a unified browser interface designed to let you monitor and control multiple 3D printers from a single screen. 
 
 It is built on the philosophy that **individual Klipper hosts should remain localized in their respective printers.** Instead of trying to centralize hardware connections onto one massive host machine, Moonitor acts strictly as a lightweight HTML thin-client dashboard. It handles the high-level UI while letting your individual printers do the heavy lifting.
 
@@ -59,6 +59,20 @@ Because of this architecture, Moonitor has virtually zero system overhead. In re
 | :---: |
 | ![Moonitor Memory Benchmark](images/memory-benchmark.png) |
 | *Consuming ~31 MB of RAM after over a month of continuous uptime across 5 printers.* |
+
+---
+
+## Where to Host Moonitor
+
+Because Moonitor is extremely lightweight and consumes very few resources (around 31 MB of RAM), it can easily be hosted on almost any always-on device on your local network:
+
+* **Dedicated Home Server / NAS:** Ideal if you already run a home server (such as an old PC, unRAID, or a Debian server running CasaOS). It can run quietly in the background alongside other services.
+* **Always-On Desktop PC:** If you keep a desktop machine turned on in your workshop or office, you can install Node.js and run Moonitor locally in the background.
+* **Old Laptop or Thin Client:** Repurposing an old, low-power laptop or a cheap second-hand corporate thin client (like an HP T630 or Dell Wyse) running a lightweight Linux distribution makes for a bulletproof, silent server.
+* **Spare Single-Board Computer (SBC):** Any model of Raspberry Pi (such as a Pi Zero 2 W, Pi 3, 4, or 5) or similar ARM-based boards can easily host it without impacting network performance.
+* **Home Assistant Host:** If you run Home Assistant on a dedicated mini PC or Raspberry Pi, you can run Moonitor alongside it as a companion service on a custom port.
+
+*(Note: Microcontrollers like the ESP32 or RP2040 cannot run Moonitor because they lack an operating system environment capable of running Node.js.)*
 
 ---
 
