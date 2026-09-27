@@ -464,7 +464,9 @@ input, select {
 @media (max-width: 768px) {
     body { overflow-y: auto; height: auto; }
     .grid { display: flex; flex-direction: column; gap: 1rem; }
-    .card { min-height: 380px; width: 100%; }
+    .grid:not(.has-focus) .card { min-height: 380px; width: 100%; }
+    .grid.has-focus .card.highlighted-card { min-height: 400px; height: 50vh; width: 100%; }
+    .focus-bottom-strip .card { min-height: 115px !important; height: 115px !important; width: 200px !important; min-width: 200px !important; }
     .side-arrow-btn { display: none; }
 }
 
