@@ -722,7 +722,7 @@ function debouncePrinterStatus(ip, newState) {
     }
 
     // 15 seconds stability delay to prevent rapid flickering
-    const STABILITY_DELAY = 15000; 
+    const STABILITY_DELAY = 30000; 
 
     const timer = setTimeout(() => {
         const el = document.getElementById(`status-${ip}`);
