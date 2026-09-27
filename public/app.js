@@ -17,6 +17,9 @@ let cycleIntervalId = null;
 let cycleSecondsRemaining = 15;
 let isHoveredOrActive = false;
 
+// Status Debounce Timers
+let printerStatusTimeouts = {};
+
 // 6 Preset Themes including btnText configurations
 const THEME_PRESETS = {
     moonitor: { bg: '#1e1e2e', surface: '#313244', accent: '#89b4fa', text: '#cdd6f4', btnText: '#1e1e2e' },
@@ -140,7 +143,7 @@ function hexToRgba(hex, alpha) {
     let c = hex.replace('#', '');
     if (c.length === 3) c = c.split('').map(x => x + x).join('');
     const num = parseInt(c, 16);
-    return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+    return `rgba(${(num >> 16) & 255},${(num >> 8) & 255}, ${num & 255},${alpha})`;
 }
 
 function openSettingsModal() {
@@ -632,8 +635,8 @@ function connectWebSocket(printer) {
 
     ws.onopen = () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
-        if(statusEl) {
-            statusEl.textContent = "Connected";
+        if(statusEl && (statusEl.textContent === "CHECKING..." || statusEl.textContent === "OFFLINE" || statusEl.textContent === "CORS BLOCKED")) {
+            statusEl.textContent = "CONNECTED";
             statusEl.style.background = "var(--success)";
         }
         
@@ -661,14 +664,14 @@ function connectWebSocket(printer) {
     ws.onclose = async () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
         if (statusEl) {
-            statusEl.textContent = "Checking...";
+            statusEl.textContent = "CHECKING...";
             const isCorsBlocked = await checkCorsStatus(printer.ip);
             
             if (isCorsBlocked) {
-                statusEl.textContent = "CORS Blocked";
+                statusEl.textContent = "CORS BLOCKED";
                 statusEl.style.background = "var(--danger)";
             } else {
-                statusEl.textContent = "Offline";
+                statusEl.textContent = "OFFLINE";
                 statusEl.style.background = "#45475a";
             }
         }
@@ -681,7 +684,8 @@ function connectWebSocket(printer) {
 
 function updatePrinterUI(ip, status) {
     if (status.print_stats && status.print_stats.state) {
-        document.getElementById(`status-${ip}`).textContent = status.print_stats.state.toUpperCase();
+        const newState = status.print_stats.state.toUpperCase();
+        debouncePrinterStatus(ip, newState);
     }
     if (status.extruder && status.extruder.temperature !== undefined) {
         document.getElementById(`hotend-read-${ip}`).textContent = status.extruder.temperature.toFixed(1);
@@ -689,6 +693,47 @@ function updatePrinterUI(ip, status) {
     if (status.heater_bed && status.heater_bed.temperature !== undefined) {
         document.getElementById(`bed-read-${ip}`).textContent = status.heater_bed.temperature.toFixed(1);
     }
+}
+
+function debouncePrinterStatus(ip, newState) {
+    const statusEl = document.getElementById(`status-${ip}`);
+    if (!statusEl) return;
+
+    const currentText = statusEl.textContent;
+    const initialPlaceholders = ["CONNECTING...", "OFFLINE", "CHECKING...", "CORS BLOCKED"];
+
+    // If it's an initial placeholder or already matches, apply immediately
+    if (initialPlaceholders.includes(currentText) || currentText === newState) {
+        statusEl.textContent = newState;
+        statusEl.style.background = "var(--success)";
+        if (printerStatusTimeouts[ip]) {
+            clearTimeout(printerStatusTimeouts[ip].timer);
+            delete printerStatusTimeouts[ip];
+        }
+        return;
+    }
+
+    if (printerStatusTimeouts[ip] && printerStatusTimeouts[ip].targetState === newState) {
+        return; // Already waiting for this state transition
+    }
+
+    if (printerStatusTimeouts[ip]) {
+        clearTimeout(printerStatusTimeouts[ip].timer);
+    }
+
+    // 15 seconds stability delay to prevent rapid flickering
+    const STABILITY_DELAY = 15000; 
+
+    const timer = setTimeout(() => {
+        const el = document.getElementById(`status-${ip}`);
+        if (el) {
+            el.textContent = newState;
+            el.style.background = "var(--success)";
+        }
+        delete printerStatusTimeouts[ip];
+    }, STABILITY_DELAY);
+
+    printerStatusTimeouts[ip] = { targetState: newState, timer: timer };
 }
 
 function sendCommand(ip, method, params = {}) {
