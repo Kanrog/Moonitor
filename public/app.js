@@ -154,16 +154,51 @@ function closeSettingsModal() {
     document.getElementById('settings-modal').style.display = 'none';
 }
 
-// --- Printer & Cycle Logic ---
+// --- Printer, Reordering & Cycle Logic ---
 
 async function loadPrinters() {
     const res = await fetch('/api/printers');
-    cachedPrinters = await res.json();
+    let printers = await res.json();
+    
+    // Apply custom order from localStorage if available
+    const savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+    if (savedOrder.length > 0) {
+        printers.sort((a, b) => {
+            const indexA = savedOrder.indexOf(a.ip);
+            const indexB = savedOrder.indexOf(b.ip);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    }
+
+    cachedPrinters = printers;
     
     const totalScreens = Math.max(1, Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN));
     if (currentScreen >= totalScreens) {
         currentScreen = totalScreens - 1;
     }
+
+    renderPrinters();
+}
+
+function shiftPrinterOrder(direction) {
+    const ip = document.getElementById('edit-old-ip').value;
+    const currentIndex = cachedPrinters.findIndex(p => p.ip === ip);
+    if (currentIndex === -1) return;
+
+    const newIndex = currentIndex + direction;
+    if (newIndex < 0 || newIndex >= cachedPrinters.length) return; // Out of bounds
+
+    // Swap positions in cachedPrinters array
+    const temp = cachedPrinters[currentIndex];
+    cachedPrinters[currentIndex] = cachedPrinters[newIndex];
+    cachedPrinters[newIndex] = temp;
+
+    // Save new order array to localStorage
+    const newOrder = cachedPrinters.map(p => p.ip);
+    localStorage.setItem('moonitor-printer-order', JSON.stringify(newOrder));
 
     renderPrinters();
 }
@@ -370,6 +405,12 @@ async function removePrinter(ip) {
         delete sockets[ip];
     }
     await fetch(`/api/printers/${ip}`, { method: 'DELETE' });
+    
+    // Clean up order array in localStorage
+    let savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+    savedOrder = savedOrder.filter(itemIp => itemIp !== ip);
+    localStorage.setItem('moonitor-printer-order', JSON.stringify(savedOrder));
+
     loadPrinters();
 }
 
@@ -416,6 +457,13 @@ async function savePrinterEdit() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, ip, cameraEnabled, rotation, mirror })
     });
+
+    // Update IP in order array if IP changed
+    if (oldIp !== ip) {
+        let savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+        savedOrder = savedOrder.map(itemIp => itemIp === oldIp ? ip : itemIp);
+        localStorage.setItem('moonitor-printer-order', JSON.stringify(savedOrder));
+    }
 
     closeEditModal();
     loadPrinters();
@@ -741,7 +789,7 @@ function debouncePrinterStatus(ip, newState) {
     }
 
     // 30 seconds stability delay
-    const STABILITY_DELAY = 60000; 
+    const STABILITY_DELAY = 30000; 
 
     const timer = setTimeout(() => {
         const el = document.getElementById(`status-${ip}`);
