@@ -143,7 +143,7 @@ function hexToRgba(hex, alpha) {
     let c = hex.replace('#', '');
     if (c.length === 3) c = c.split('').map(x => x + x).join('');
     const num = parseInt(c, 16);
-    return `rgba(${(num >> 16) & 255},${(num >> 8) & 255}, ${num & 255},${alpha})`;
+    return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
 }
 
 function openSettingsModal() {
@@ -160,7 +160,6 @@ async function loadPrinters() {
     const res = await fetch('/api/printers');
     cachedPrinters = await res.json();
     
-    // Ensure currentScreen is valid if printers were removed
     const totalScreens = Math.max(1, Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN));
     if (currentScreen >= totalScreens) {
         currentScreen = totalScreens - 1;
@@ -202,7 +201,7 @@ function toggleCycleMode() {
 
         if (cycleIntervalId) clearInterval(cycleIntervalId);
         cycleIntervalId = setInterval(() => {
-            if (isHoveredOrActive) return; // Pause countdown while interacting
+            if (isHoveredOrActive) return;
 
             cycleSecondsRemaining--;
             if (cycleSecondsRemaining <= 0) {
@@ -471,7 +470,6 @@ function createPrinterCard(printer) {
         card.classList.add('highlighted-card');
     }
 
-    // Auto-pause cycle timer when hovering over the card
     card.addEventListener('mouseenter', () => { if (isCycling) isHoveredOrActive = true; });
     card.addEventListener('mouseleave', () => { if (isCycling) isHoveredOrActive = false; });
     
@@ -494,10 +492,14 @@ function createPrinterCard(printer) {
     card.innerHTML = `
         ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
 
+        <div class="card-progress-track" id="progress-track-${printer.ip}">
+            <div class="card-progress-fill" id="progress-fill-${printer.ip}"></div>
+        </div>
+
         <div class="card-top-bar">
             <h3>${printer.name}</h3>
             <div style="display: flex; gap: 4px; align-items: center;">
-                <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
+                <span class="status-badge" id="status-${printer.ip}">CONNECTING...</span>
                 <button class="icon-btn" onclick="toggleHighlight('${safeIp}')" title="${isHighlighted ? 'Exit Highlight' : 'Highlight Printer'}">${isHighlighted ? '⭐' : '🔍'}</button>
                 <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
                 <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
@@ -557,22 +559,19 @@ function createPrinterCard(printer) {
 
 function renderPrinters() {
     const grid = document.getElementById('printer-grid');
-    grid.className = 'grid'; // Reset classes
+    grid.className = 'grid';
     grid.innerHTML = '';
 
     const arrowBtn = document.getElementById('screen-arrow-btn');
 
-    // If a printer is highlighted, render focus mode layout
     const highlightedPrinter = cachedPrinters.find(p => p.ip === highlightedIp);
 
     if (highlightedPrinter) {
         grid.classList.add('has-focus');
         arrowBtn.style.display = 'none';
 
-        // 1. Render Big Highlighted Card
         grid.appendChild(createPrinterCard(highlightedPrinter));
 
-        // 2. Render Bottom Row Strip for other printers
         const otherPrinters = cachedPrinters.filter(p => p.ip !== highlightedIp);
         if (otherPrinters.length > 0) {
             const strip = document.createElement('div');
@@ -585,7 +584,6 @@ function renderPrinters() {
         return;
     }
 
-    // Otherwise, render normal screen pagination layout
     const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
 
     if (totalScreens > 1) {
@@ -643,14 +641,14 @@ function connectWebSocket(printer) {
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.query",
-            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null, virtual_sdcard: null } },
             id: 1
         }));
         
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.subscribe",
-            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null, virtual_sdcard: null } },
             id: 2
         }));
     };
@@ -676,6 +674,9 @@ function connectWebSocket(printer) {
             }
         }
         
+        const track = document.getElementById(`progress-track-${printer.ip}`);
+        if (track) track.style.display = 'none';
+
         setTimeout(() => {
             if(document.getElementById(`status-${printer.ip}`)) connectWebSocket(printer);
         }, 5000);
@@ -686,6 +687,23 @@ function updatePrinterUI(ip, status) {
     if (status.print_stats && status.print_stats.state) {
         const newState = status.print_stats.state.toUpperCase();
         debouncePrinterStatus(ip, newState);
+    }
+    if (status.virtual_sdcard && status.virtual_sdcard.progress !== undefined) {
+        const progressPct = (status.virtual_sdcard.progress * 100).toFixed(1);
+        const fill = document.getElementById(`progress-fill-${ip}`);
+        const track = document.getElementById(`progress-track-${ip}`);
+        const statusEl = document.getElementById(`status-${ip}`);
+
+        if (fill) fill.style.width = `${progressPct}%`;
+        
+        if (track && statusEl) {
+            if (statusEl.textContent.includes("PRINTING")) {
+                track.style.display = 'block';
+                statusEl.textContent = `PRINTING (${progressPct}%)`;
+            } else {
+                track.style.display = 'none';
+            }
+        }
     }
     if (status.extruder && status.extruder.temperature !== undefined) {
         document.getElementById(`hotend-read-${ip}`).textContent = status.extruder.temperature.toFixed(1);
@@ -699,13 +717,14 @@ function debouncePrinterStatus(ip, newState) {
     const statusEl = document.getElementById(`status-${ip}`);
     if (!statusEl) return;
 
-    const currentText = statusEl.textContent;
+    const currentText = statusEl.textContent.split(' ')[0];
     const initialPlaceholders = ["CONNECTING...", "OFFLINE", "CHECKING...", "CORS BLOCKED"];
 
-    // If it's an initial placeholder or already matches, apply immediately
     if (initialPlaceholders.includes(currentText) || currentText === newState) {
-        statusEl.textContent = newState;
-        statusEl.style.background = "var(--success)";
+        if (currentText !== newState) {
+            statusEl.textContent = newState;
+            statusEl.style.background = "var(--success)";
+        }
         if (printerStatusTimeouts[ip]) {
             clearTimeout(printerStatusTimeouts[ip].timer);
             delete printerStatusTimeouts[ip];
@@ -714,15 +733,15 @@ function debouncePrinterStatus(ip, newState) {
     }
 
     if (printerStatusTimeouts[ip] && printerStatusTimeouts[ip].targetState === newState) {
-        return; // Already waiting for this state transition
+        return;
     }
 
     if (printerStatusTimeouts[ip]) {
         clearTimeout(printerStatusTimeouts[ip].timer);
     }
 
-    // 15 seconds stability delay to prevent rapid flickering
-    const STABILITY_DELAY = 30000; 
+    // 30 seconds stability delay
+    const STABILITY_DELAY = 60000; 
 
     const timer = setTimeout(() => {
         const el = document.getElementById(`status-${ip}`);
