@@ -12,7 +12,10 @@
 </head>
 <body>
     <div class="header-container">
-        <div style="width: 160px;"></div>
+        <div class="header-ram-stats" id="header-ram-stats" style="display: none;">
+            <span title="Moonitor App Memory Footprint">App: <strong id="stat-moonitor-ram">--</strong></span>
+            <span title="Host System RAM Utilization">Sys: <strong id="stat-system-ram">--</strong></span>
+        </div>
         <div class="header-title">
             <img src="images/moonitor-logo.png" alt="Moonitor Logo" class="header-logo">
             <h1>Moonitor</h1>
@@ -86,8 +89,13 @@
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-card">
             <h3>Settings & Themes</h3>
+
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 5px;">Dashboard Display:</label>
+            <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="setting-show-ram" onchange="saveRamToggle()"> Show RAM Usage in Header
+            </label>
             
-            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text);">Auto-Cycle Settings:</label>
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--text); margin-top: 10px;">Auto-Cycle Settings:</label>
             <div class="custom-color-row">
                 <span>Cycle Interval (sec):</span>
                 <input type="number" id="setting-cycle-interval" value="15" min="3" max="300" onchange="saveCycleInterval()" style="width: 60px; text-align: center;">

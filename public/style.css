@@ -461,6 +461,25 @@ input, select {
     background: none;
 }
 
+.header-ram-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.7rem;
+    color: var(--text);
+    background: var(--surface);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--surface);
+    width: 155px;
+    box-sizing: border-box;
+}
+
+.header-ram-stats span {
+    display: flex;
+    justify-content: space-between;
+}
+
 @media (max-width: 768px) {
     body { overflow-y: auto; height: auto; }
     .grid { display: flex; flex-direction: column; gap: 1rem; }

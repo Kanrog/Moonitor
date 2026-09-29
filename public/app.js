@@ -33,6 +33,8 @@ const THEME_PRESETS = {
 document.addEventListener('DOMContentLoaded', () => {
     loadSavedTheme();
     loadCycleIntervalSetting();
+    loadRamToggleSetting();
+    initSystemStatsPoll();
     loadPrinters();
 
     // Mobile tap-to-close logic: Closes the overlay if you tap outside of it on touch devices
@@ -87,6 +89,49 @@ function saveCycleInterval() {
     if (input) {
         localStorage.setItem('moonitor-cycle-interval', input.value);
     }
+}
+
+function loadRamToggleSetting() {
+    const show = localStorage.getItem('moonitor-show-ram') === 'true';
+    const checkbox = document.getElementById('setting-show-ram');
+    if (checkbox) checkbox.checked = show;
+    
+    const container = document.getElementById('header-ram-stats');
+    if (container) container.style.display = show ? 'flex' : 'none';
+}
+
+function saveRamToggle() {
+    const checkbox = document.getElementById('setting-show-ram');
+    const show = checkbox ? checkbox.checked : false;
+    localStorage.setItem('moonitor-show-ram', show);
+    
+    const container = document.getElementById('header-ram-stats');
+    if (container) container.style.display = show ? 'flex' : 'none';
+}
+
+function initSystemStatsPoll() {
+    setInterval(async () => {
+        const show = localStorage.getItem('moonitor-show-ram') === 'true';
+        if (!show) return;
+
+        try {
+            const res = await fetch('/api/system/stats');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const moonitorMB = (data.moonitorRss / (1024 * 1024)).toFixed(1);
+            const systemUsedGB = (data.systemUsed / (1024 * 1024 * 1024)).toFixed(1);
+            const systemTotalGB = (data.systemTotal / (1024 * 1024 * 1024)).toFixed(1);
+
+            const mEl = document.getElementById('stat-moonitor-ram');
+            const sEl = document.getElementById('stat-system-ram');
+
+            if (mEl) mEl.textContent = `${moonitorMB} MB`;
+            if (sEl) sEl.textContent = `${systemUsedGB}/${systemTotalGB}GB (${data.systemPct}%)`;
+        } catch (e) {
+            // Fail silently if server is momentarily unreachable
+        }
+    }, 5000);
 }
 
 function applyPresetTheme(themeKey, save = true) {
