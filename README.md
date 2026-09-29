@@ -36,6 +36,7 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 * **Flexible Camera Controls:** Enable, disable, rotate (0°, 90°, 180°, 270°), and horizontally mirror your webcam feeds directly from the printer settings to fit any enclosure orientation.
 * **Customisable Themes:** Includes 6 preset color themes (Moonitor Dark, Cyberpunk Neon, Emerald Mint, Sunset Ember, Monolith, and Purple Vibe) plus a fully customizable color palette to adjust backgrounds, text, buttons, button text, and outlines with persistent `localStorage` saving.
 * **Highlight & Auto-Cycle Modes:** Instantly maximize any single printer preview while keeping the rest visible in a bottom strip, or enable Auto-Cycle mode to automatically rotate through your fleet on a user-defined timer with live countdown indicators and hover-pause protection.
+* **Resource Monitoring:** Real-time visibility into Moonitor's ultra-lean app memory footprint alongside overall host system RAM utilization, with an optional header display toggle in the settings menu.
 
 > ### Creality K2 / K2 Plus Camera Note
 > The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
