@@ -6,6 +6,19 @@ if ('serviceWorker' in navigator) {
 
 let sockets = {};
 let foundDiscoveredPrinters = [];
+let cachedPrinters = [];
+let currentScreen = 0;
+let highlightedIp = null;
+const PRINTERS_PER_SCREEN = 9;
+
+// Cycle Mode State Variables
+let isCycling = false;
+let cycleIntervalId = null;
+let cycleSecondsRemaining = 15;
+let isHoveredOrActive = false;
+
+// Status Debounce Timers
+let printerStatusTimeouts = {};
 
 // 6 Preset Themes including btnText configurations
 const THEME_PRESETS = {
@@ -19,6 +32,9 @@ const THEME_PRESETS = {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadSavedTheme();
+    loadCycleIntervalSetting();
+    loadRamToggleSetting();
+    initSystemStatsPoll();
     loadPrinters();
 
     // Mobile tap-to-close logic: Closes the overlay if you tap outside of it on touch devices
@@ -38,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- Theme Management Functions ---
+// --- Theme & Settings Management ---
 
 function loadSavedTheme() {
     const savedType = localStorage.getItem('moonitor-theme-type');
@@ -58,6 +74,64 @@ function loadSavedTheme() {
     } else {
         applyPresetTheme('moonitor', false);
     }
+}
+
+function loadCycleIntervalSetting() {
+    const saved = localStorage.getItem('moonitor-cycle-interval');
+    const val = saved ? parseInt(saved) : 15;
+    const input = document.getElementById('setting-cycle-interval');
+    if (input) input.value = val;
+    return val;
+}
+
+function saveCycleInterval() {
+    const input = document.getElementById('setting-cycle-interval');
+    if (input) {
+        localStorage.setItem('moonitor-cycle-interval', input.value);
+    }
+}
+
+function loadRamToggleSetting() {
+    const show = localStorage.getItem('moonitor-show-ram') === 'true';
+    const checkbox = document.getElementById('setting-show-ram');
+    if (checkbox) checkbox.checked = show;
+    
+    const container = document.getElementById('header-ram-stats');
+    if (container) container.style.display = show ? 'flex' : 'none';
+}
+
+function saveRamToggle() {
+    const checkbox = document.getElementById('setting-show-ram');
+    const show = checkbox ? checkbox.checked : false;
+    localStorage.setItem('moonitor-show-ram', show);
+    
+    const container = document.getElementById('header-ram-stats');
+    if (container) container.style.display = show ? 'flex' : 'none';
+}
+
+function initSystemStatsPoll() {
+    setInterval(async () => {
+        const show = localStorage.getItem('moonitor-show-ram') === 'true';
+        if (!show) return;
+
+        try {
+            const res = await fetch('/api/system/stats');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const moonitorMB = (data.moonitorRss / (1024 * 1024)).toFixed(1);
+            const systemUsedGB = (data.systemUsed / (1024 * 1024 * 1024)).toFixed(1);
+            const systemTotalGB = (data.systemTotal / (1024 * 1024 * 1024)).toFixed(1);
+
+            const mEl = document.getElementById('stat-moonitor-ram');
+            const sEl = document.getElementById('stat-system-ram');
+
+            if (mEl) mEl.textContent = `${moonitorMB} MB`;
+            if (sEl) sEl.textContent = `${systemUsedGB}/${systemTotalGB}GB (${data.systemPct}%)`;
+        } catch (e) {
+            // Fail silently if server is momentarily unreachable
+        }
+    }, 5000);
 }
 
 function applyPresetTheme(themeKey, save = true) {
@@ -125,12 +199,131 @@ function closeSettingsModal() {
     document.getElementById('settings-modal').style.display = 'none';
 }
 
-// --- Printer Logic ---
+// --- Printer, Reordering & Cycle Logic ---
 
 async function loadPrinters() {
     const res = await fetch('/api/printers');
-    const printers = await res.json();
-    renderPrinters(printers);
+    let printers = await res.json();
+    
+    // Apply custom order from localStorage if available
+    const savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+    if (savedOrder.length > 0) {
+        printers.sort((a, b) => {
+            const indexA = savedOrder.indexOf(a.ip);
+            const indexB = savedOrder.indexOf(b.ip);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    }
+
+    cachedPrinters = printers;
+    
+    const totalScreens = Math.max(1, Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN));
+    if (currentScreen >= totalScreens) {
+        currentScreen = totalScreens - 1;
+    }
+
+    renderPrinters();
+}
+
+function shiftPrinterOrder(direction) {
+    const ip = document.getElementById('edit-old-ip').value;
+    const currentIndex = cachedPrinters.findIndex(p => p.ip === ip);
+    if (currentIndex === -1) return;
+
+    const newIndex = currentIndex + direction;
+    if (newIndex < 0 || newIndex >= cachedPrinters.length) return; // Out of bounds
+
+    // Swap positions in cachedPrinters array
+    const temp = cachedPrinters[currentIndex];
+    cachedPrinters[currentIndex] = cachedPrinters[newIndex];
+    cachedPrinters[newIndex] = temp;
+
+    // Save new order array to localStorage
+    const newOrder = cachedPrinters.map(p => p.ip);
+    localStorage.setItem('moonitor-printer-order', JSON.stringify(newOrder));
+
+    renderPrinters();
+}
+
+function nextScreen() {
+    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
+    if (totalScreens > 1) {
+        currentScreen = (currentScreen + 1) % totalScreens;
+        renderPrinters();
+    }
+}
+
+function toggleHighlight(ip) {
+    if (isCycling) {
+        stopCycleMode();
+    }
+    highlightedIp = (highlightedIp === ip) ? null : ip;
+    renderPrinters();
+}
+
+function toggleCycleMode() {
+    if (cachedPrinters.length === 0) {
+        alert("No printers available to cycle.");
+        return;
+    }
+
+    isCycling = !isCycling;
+
+    if (isCycling) {
+        if (!highlightedIp) {
+            highlightedIp = cachedPrinters[0].ip;
+        }
+        cycleSecondsRemaining = loadCycleIntervalSetting();
+        updateCycleButtonText();
+
+        if (cycleIntervalId) clearInterval(cycleIntervalId);
+        cycleIntervalId = setInterval(() => {
+            if (isHoveredOrActive) return;
+
+            cycleSecondsRemaining--;
+            if (cycleSecondsRemaining <= 0) {
+                cycleSecondsRemaining = loadCycleIntervalSetting();
+                moveToNextPrinterInCycle();
+            }
+            updateCycleButtonText();
+        }, 1000);
+
+        renderPrinters();
+    } else {
+        stopCycleMode();
+        renderPrinters();
+    }
+}
+
+function stopCycleMode() {
+    isCycling = false;
+    if (cycleIntervalId) {
+        clearInterval(cycleIntervalId);
+        cycleIntervalId = null;
+    }
+    const btn = document.getElementById('cycle-btn');
+    if (btn) btn.innerHTML = 'CYCLE ⚪';
+}
+
+function updateCycleButtonText() {
+    const btn = document.getElementById('cycle-btn');
+    if (!btn) return;
+    if (isCycling) {
+        btn.innerHTML = `CYCLE 🟢 ${cycleSecondsRemaining}`;
+    } else {
+        btn.innerHTML = 'CYCLE ⚪';
+    }
+}
+
+function moveToNextPrinterInCycle() {
+    if (cachedPrinters.length === 0) return;
+    const currentIndex = cachedPrinters.findIndex(p => p.ip === highlightedIp);
+    const nextIndex = (currentIndex + 1) % cachedPrinters.length;
+    highlightedIp = cachedPrinters[nextIndex].ip;
+    renderPrinters();
 }
 
 async function addManualPrinter() {
@@ -257,6 +450,12 @@ async function removePrinter(ip) {
         delete sockets[ip];
     }
     await fetch(`/api/printers/${ip}`, { method: 'DELETE' });
+    
+    // Clean up order array in localStorage
+    let savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+    savedOrder = savedOrder.filter(itemIp => itemIp !== ip);
+    localStorage.setItem('moonitor-printer-order', JSON.stringify(savedOrder));
+
     loadPrinters();
 }
 
@@ -304,6 +503,13 @@ async function savePrinterEdit() {
         body: JSON.stringify({ name, ip, cameraEnabled, rotation, mirror })
     });
 
+    // Update IP in order array if IP changed
+    if (oldIp !== ip) {
+        let savedOrder = JSON.parse(localStorage.getItem('moonitor-printer-order') || '[]');
+        savedOrder = savedOrder.map(itemIp => itemIp === oldIp ? ip : itemIp);
+        localStorage.setItem('moonitor-printer-order', JSON.stringify(savedOrder));
+    }
+
     closeEditModal();
     loadPrinters();
 }
@@ -350,89 +556,149 @@ function toggleOverlay(element, ip) {
     }
 }
 
-function renderPrinters(printers) {
+function createPrinterCard(printer) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    if (printer.ip === highlightedIp) {
+        card.classList.add('highlighted-card');
+    }
+
+    card.addEventListener('mouseenter', () => { if (isCycling) isHoveredOrActive = true; });
+    card.addEventListener('mouseleave', () => { if (isCycling) isHoveredOrActive = false; });
+    
+    const camPath = printer.webcamPath || '/webcam/?action=stream';
+    const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
+    const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
+
+    const isCamEnabled = printer.cameraEnabled !== false;
+    const rotation = printer.rotation || 0;
+    const mirror = printer.mirror ? -1 : 1;
+    
+    let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
+    if (rotation === 90 || rotation === 270) {
+        transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
+    }
+
+    const safeIp = printer.ip;
+    const isHighlighted = (printer.ip === highlightedIp);
+
+    card.innerHTML = `
+        ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
+
+        <div class="card-progress-track" id="progress-track-${printer.ip}">
+            <div class="card-progress-fill" id="progress-fill-${printer.ip}"></div>
+        </div>
+
+        <div class="card-top-bar">
+            <h3>${printer.name}</h3>
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <span class="status-badge" id="status-${printer.ip}">CONNECTING...</span>
+                <button class="icon-btn" onclick="toggleHighlight('${safeIp}')" title="${isHighlighted ? 'Exit Highlight' : 'Highlight Printer'}">${isHighlighted ? '⭐' : '🔍'}</button>
+                <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
+                <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
+                <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
+            </div>
+        </div>
+
+        <div class="card-overlay" onmouseenter="fetchMacros('${printer.ip}')">
+            <div class="controls-row">
+                <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
+                <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
+                <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
+            </div>
+
+            <div class="controls-row">
+                <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
+                <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
+                <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
+                <button class="danger" onclick="sendGcode('${printer.ip}', 'M84')">Motors Off</button>
+            </div>
+            
+            <div class="controls-row" style="align-items: center;">
+                <span style="font-size: 0.7rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
+                <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
+            </div>
+
+            <div class="controls-row">
+                <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
+                <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
+            </div>
+            
+            <div class="controls-row">
+                <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
+                <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
+            </div>
+
+            <div class="controls-row">
+                <select id="macro-select-${printer.ip}">
+                    <option value="">Select Macro...</option>
+                </select>
+                <button onclick="runSelectedMacro('${printer.ip}')">Run</button>
+            </div>
+            
+            <div class="temp-footer">
+                <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
+                <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
+            </div>
+        </div>
+    `;
+
+    connectWebSocket(printer);
+    return card;
+}
+
+function renderPrinters() {
     const grid = document.getElementById('printer-grid');
+    grid.className = 'grid';
     grid.innerHTML = '';
 
-    printers.forEach(printer => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        
-        const camPath = printer.webcamPath || '/webcam/?action=stream';
-        const primaryCamUrl = `http://${printer.ip}:${printer.webcamPort}${camPath}`;
-        const fallbackCamUrl = `http://${printer.ip}/webcam/?action=stream`;
+    const arrowBtn = document.getElementById('screen-arrow-btn');
 
-        const isCamEnabled = printer.cameraEnabled !== false;
-        const rotation = printer.rotation || 0;
-        const mirror = printer.mirror ? -1 : 1;
-        
-        let transformStr = `rotate(${rotation}deg) scaleX(${mirror})`;
-        if (rotation === 90 || rotation === 270) {
-            transformStr = `rotate(${rotation}deg) scale(${mirror * 0.5625}, 1.7778)`;
+    const highlightedPrinter = cachedPrinters.find(p => p.ip === highlightedIp);
+
+    if (highlightedPrinter) {
+        grid.classList.add('has-focus');
+        arrowBtn.style.display = 'none';
+
+        grid.appendChild(createPrinterCard(highlightedPrinter));
+
+        const otherPrinters = cachedPrinters.filter(p => p.ip !== highlightedIp);
+        if (otherPrinters.length > 0) {
+            const strip = document.createElement('div');
+            strip.className = 'focus-bottom-strip';
+            otherPrinters.forEach(printer => {
+                strip.appendChild(createPrinterCard(printer));
+            });
+            grid.appendChild(strip);
         }
+        return;
+    }
 
-        const safeIp = printer.ip;
+    const totalScreens = Math.ceil(cachedPrinters.length / PRINTERS_PER_SCREEN);
 
-        card.innerHTML = `
-            ${isCamEnabled ? `<img class="webcam-feed" src="${primaryCamUrl}" style="transform: ${transformStr};" alt="Camera Feed Offline" onerror="if(this.src !== '${fallbackCamUrl}') { this.src = '${fallbackCamUrl}'; } else { this.style.display='none'; }" onclick="toggleOverlay(this, '${safeIp}')">` : `<div class="camera-disabled-placeholder" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size: 0.85rem;" onclick="toggleOverlay(this, '${safeIp}')">Camera Disabled</div>`}
+    if (totalScreens > 1) {
+        arrowBtn.style.display = 'flex';
+        arrowBtn.title = `Switch Screen (${currentScreen + 1}/${totalScreens})`;
+    } else {
+        arrowBtn.style.display = 'none';
+        currentScreen = 0;
+    }
 
-            <div class="card-top-bar">
-                <h3>${printer.name}</h3>
-                <div style="display: flex; gap: 4px; align-items: center;">
-                    <span class="status-badge" id="status-${printer.ip}">Connecting...</span>
-                    <a href="http://${printer.ip}" target="_blank" class="icon-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Open Klipper Interface">🔗</a>
-                    <button class="icon-btn" onclick="openEditModal('${safeIp}')" title="Edit Printer">⚙️</button>
-                    <button class="icon-btn remove-btn" onclick="removePrinter('${printer.ip}')" title="Remove Printer">✕</button>
-                </div>
-            </div>
+    const startIndex = currentScreen * PRINTERS_PER_SCREEN;
+    const pagePrinters = cachedPrinters.slice(startIndex, startIndex + PRINTERS_PER_SCREEN);
 
-            <div class="card-overlay" onmouseenter="fetchMacros('${printer.ip}')">
-                <div class="controls-row">
-                    <button onclick="sendCommand('${printer.ip}', 'printer.print.pause')">Pause</button>
-                    <button onclick="sendCommand('${printer.ip}', 'printer.print.resume')">Resume</button>
-                    <button class="danger" onclick="sendCommand('${printer.ip}', 'printer.print.cancel')">Cancel</button>
-                </div>
+    const count = pagePrinters.length;
+    if (count === 1) grid.classList.add('layout-1');
+    else if (count === 2) grid.classList.add('layout-2');
+    else if (count <= 4) grid.classList.add('layout-3-4');
+    else if (count <= 6) grid.classList.add('layout-5-6');
+    else grid.classList.add('layout-7-9');
 
-                <div class="controls-row">
-                    <button onclick="sendGcode('${printer.ip}', 'G28')">Home All</button>
-                    <button onclick="sendGcode('${printer.ip}', 'G28 X Y')">Home X/Y</button>
-                    <button onclick="sendGcode('${printer.ip}', 'G28 Z')">Home Z</button>
-                    <button class="danger" onclick="sendGcode('${printer.ip}', 'M84')">Motors Off</button>
-                </div>
-                
-                <div class="controls-row" style="align-items: center;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); flex: none;">Z-Offset:</span>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.01 MOVE=1')">+0.01</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.01 MOVE=1')">-0.01</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=0.05 MOVE=1')">+0.05</button>
-                    <button onclick="sendGcode('${printer.ip}', 'SET_GCODE_OFFSET Z_ADJUST=-0.05 MOVE=1')">-0.05</button>
-                </div>
-
-                <div class="controls-row">
-                    <input type="number" id="hotend-${printer.ip}" placeholder="Hotend Target">
-                    <button onclick="setTemp('${printer.ip}', 'extruder', 'hotend-${printer.ip}')">Set Hotend</button>
-                </div>
-                
-                <div class="controls-row">
-                    <input type="number" id="bed-${printer.ip}" placeholder="Bed Target">
-                    <button onclick="setTemp('${printer.ip}', 'heater_bed', 'bed-${printer.ip}')">Set Bed</button>
-                </div>
-
-                <div class="controls-row">
-                    <select id="macro-select-${printer.ip}">
-                        <option value="">Select Macro...</option>
-                    </select>
-                    <button onclick="runSelectedMacro('${printer.ip}')">Run</button>
-                </div>
-                
-                <div class="temp-footer">
-                    <span>Hotend: <strong id="hotend-read-${printer.ip}">0.0</strong>°C</span>
-                    <span>Bed: <strong id="bed-read-${printer.ip}">0.0</strong>°C</span>
-                </div>
-            </div>
-        `;
-        grid.appendChild(card);
-        connectWebSocket(printer);
+    pagePrinters.forEach(printer => {
+        grid.appendChild(createPrinterCard(printer));
     });
 }
 
@@ -460,22 +726,22 @@ function connectWebSocket(printer) {
 
     ws.onopen = () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
-        if(statusEl) {
-            statusEl.textContent = "Connected";
+        if(statusEl && (statusEl.textContent === "CHECKING..." || statusEl.textContent === "OFFLINE" || statusEl.textContent === "CORS BLOCKED")) {
+            statusEl.textContent = "CONNECTED";
             statusEl.style.background = "var(--success)";
         }
         
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.query",
-            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null, virtual_sdcard: null } },
             id: 1
         }));
         
         ws.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "printer.objects.subscribe",
-            params: { objects: { print_stats: null, extruder: null, heater_bed: null } },
+            params: { objects: { print_stats: null, extruder: null, heater_bed: null, virtual_sdcard: null } },
             id: 2
         }));
     };
@@ -489,18 +755,21 @@ function connectWebSocket(printer) {
     ws.onclose = async () => {
         const statusEl = document.getElementById(`status-${printer.ip}`);
         if (statusEl) {
-            statusEl.textContent = "Checking...";
+            statusEl.textContent = "CHECKING...";
             const isCorsBlocked = await checkCorsStatus(printer.ip);
             
             if (isCorsBlocked) {
-                statusEl.textContent = "CORS Blocked";
+                statusEl.textContent = "CORS BLOCKED";
                 statusEl.style.background = "var(--danger)";
             } else {
-                statusEl.textContent = "Offline";
+                statusEl.textContent = "OFFLINE";
                 statusEl.style.background = "#45475a";
             }
         }
         
+        const track = document.getElementById(`progress-track-${printer.ip}`);
+        if (track) track.style.display = 'none';
+
         setTimeout(() => {
             if(document.getElementById(`status-${printer.ip}`)) connectWebSocket(printer);
         }, 5000);
@@ -509,7 +778,25 @@ function connectWebSocket(printer) {
 
 function updatePrinterUI(ip, status) {
     if (status.print_stats && status.print_stats.state) {
-        document.getElementById(`status-${ip}`).textContent = status.print_stats.state.toUpperCase();
+        const newState = status.print_stats.state.toUpperCase();
+        debouncePrinterStatus(ip, newState);
+    }
+    if (status.virtual_sdcard && status.virtual_sdcard.progress !== undefined) {
+        const progressPct = (status.virtual_sdcard.progress * 100).toFixed(1);
+        const fill = document.getElementById(`progress-fill-${ip}`);
+        const track = document.getElementById(`progress-track-${ip}`);
+        const statusEl = document.getElementById(`status-${ip}`);
+
+        if (fill) fill.style.width = `${progressPct}%`;
+        
+        if (track && statusEl) {
+            if (statusEl.textContent.includes("PRINTING")) {
+                track.style.display = 'block';
+                statusEl.textContent = `PRINTING (${progressPct}%)`;
+            } else {
+                track.style.display = 'none';
+            }
+        }
     }
     if (status.extruder && status.extruder.temperature !== undefined) {
         document.getElementById(`hotend-read-${ip}`).textContent = status.extruder.temperature.toFixed(1);
@@ -517,6 +804,48 @@ function updatePrinterUI(ip, status) {
     if (status.heater_bed && status.heater_bed.temperature !== undefined) {
         document.getElementById(`bed-read-${ip}`).textContent = status.heater_bed.temperature.toFixed(1);
     }
+}
+
+function debouncePrinterStatus(ip, newState) {
+    const statusEl = document.getElementById(`status-${ip}`);
+    if (!statusEl) return;
+
+    const currentText = statusEl.textContent.split(' ')[0];
+    const initialPlaceholders = ["CONNECTING...", "OFFLINE", "CHECKING...", "CORS BLOCKED"];
+
+    if (initialPlaceholders.includes(currentText) || currentText === newState) {
+        if (currentText !== newState) {
+            statusEl.textContent = newState;
+            statusEl.style.background = "var(--success)";
+        }
+        if (printerStatusTimeouts[ip]) {
+            clearTimeout(printerStatusTimeouts[ip].timer);
+            delete printerStatusTimeouts[ip];
+        }
+        return;
+    }
+
+    if (printerStatusTimeouts[ip] && printerStatusTimeouts[ip].targetState === newState) {
+        return;
+    }
+
+    if (printerStatusTimeouts[ip]) {
+        clearTimeout(printerStatusTimeouts[ip].timer);
+    }
+
+    // 30 seconds stability delay
+    const STABILITY_DELAY = 30000; 
+
+    const timer = setTimeout(() => {
+        const el = document.getElementById(`status-${ip}`);
+        if (el) {
+            el.textContent = newState;
+            el.style.background = "var(--success)";
+        }
+        delete printerStatusTimeouts[ip];
+    }, STABILITY_DELAY);
+
+    printerStatusTimeouts[ip] = { targetState: newState, timer: timer };
 }
 
 function sendCommand(ip, method, params = {}) {

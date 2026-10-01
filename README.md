@@ -30,10 +30,10 @@ Beyond core fleet control, Moonitor is packed with thoughtful touches to match y
 | ![Fully set up interface with printers added](images/1.jpg) | ![Control overlay on a printer card](images/2.png) |
 | *Managing multiple Klipper nodes from a single window.* | *Access instant controls, telemetry, and macros on hover.* |
 
-| Network Scan Results |
-| :---: |
-| ![Network scan results dialog](images/3.png) |
-| *Easily discover and batch-add local Moonraker endpoints.* |
+| Network Scan Results | Highlight Mode |
+| :---: | :---: |
+| ![Network scan results dialog](images/3.png) | ![Highlight mode preview](images/highlight.png) |
+| *Easily discover and batch-add local Moonraker endpoints.* | *Maximize a single printer while keeping others in a bottom strip.* |
 
 ---
 
@@ -45,7 +45,9 @@ Beyond core fleet control, Moonitor is packed with thoughtful touches to match y
 * **Essential Controls:** Start, pause, cancel, adjust Z-offset, set temperatures, home axes, and trigger custom macros across your entire fleet from one window.
 * **Persistent Storage:** Saves your fleet configuration locally so your dashboard is exactly how you left it after a reboot.
 * **Flexible Camera Controls:** Enable, disable, rotate (0°, 90°, 180°, 270°), and horizontally mirror your webcam feeds directly from the printer settings to fit any enclosure orientation.
-* **CustomisableThemes:** Includes 6 preset color themes (Moonitor Dark, Cyberpunk Neon, Emerald Mint, Sunset Ember, Monolith, and Purple Vibe) plus a fully customizable color palette to adjust backgrounds, text, buttons, button text, and outlines with persistent `localStorage` saving.
+* **Customisable Themes:** Includes 6 preset color themes (Moonitor Dark, Cyberpunk Neon, Emerald Mint, Sunset Ember, Monolith, and Purple Vibe) plus a fully customizable color palette to adjust backgrounds, text, buttons, button text, and outlines with persistent `localStorage` saving.
+* **Highlight & Auto-Cycle Modes:** Instantly maximize any single printer preview while keeping the rest visible in a bottom strip, or enable Auto-Cycle mode to automatically rotate through your fleet on a user-defined timer with live countdown indicators and hover-pause protection.
+* **Resource Monitoring:** Real-time visibility into Moonitor's ultra-lean app memory footprint alongside overall host system RAM utilization, with an optional header display toggle in the settings menu.
 
 > ### Creality K2 / K2 Plus Camera Note
 > The Creality K2 series uses a proprietary WebRTC camera stream instead of a standard MJPEG endpoint. If your camera feed fails to load, ensure you have a local stream bridge (such as `go2rtc` or a community-supported helper script) configured on your printer to translate the stream into an accessible format.
@@ -74,6 +76,20 @@ Because of this architecture, Moonitor has virtually zero system overhead. In re
 
 ---
 
+## Where to Host Moonitor
+
+Because Moonitor is extremely lightweight and consumes very few resources (around 31 MB of RAM), it can easily be hosted on almost any always-on device on your local network:
+
+* **Dedicated Home Server / NAS:** Ideal if you already run a home server (such as an old PC, unRAID, or a Debian server running CasaOS). It can run quietly in the background alongside other services.
+* **Always-On Desktop PC:** If you keep a desktop machine turned on in your workshop or office, you can install Node.js and run Moonitor locally in the background.
+* **Old Laptop or Thin Client:** Repurposing an old, low-power laptop or a cheap second-hand corporate thin client (like an HP T630 or Dell Wyse) running a lightweight Linux distribution makes for a bulletproof, silent server.
+* **Spare Single-Board Computer (SBC):** Any model of Raspberry Pi (such as a Pi Zero 2 W, Pi 3, 4, or 5) or similar ARM-based boards can easily host it without impacting network performance.
+* **Home Assistant Host:** If you run Home Assistant on a dedicated mini PC or Raspberry Pi, you can run Moonitor alongside it as a companion service on a custom port.
+
+*(Note: Microcontrollers like the ESP32 or RP2040 cannot run Moonitor because they lack an operating system environment capable of running Node.js.)*
+
+---
+
 ## Quick Install
 
 You can install Moonitor directly on one of your existing Klipper hosts (like a Raspberry Pi) or a dedicated local home server. 
@@ -81,7 +97,7 @@ You can install Moonitor directly on one of your existing Klipper hosts (like a 
 Run this command via SSH on your target Debian/Ubuntu machine to automatically install Node.js, download Moonitor, and set it up as a background service:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh | bash
+curl -sSL [https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh](https://raw.githubusercontent.com/Kanrog/Moonitor/main/install.sh) | bash
 ```
 
 Once installed, open a browser on your network and navigate to `http://<YOUR_HOST_IP>:3366`.
@@ -106,7 +122,7 @@ Moonitor includes full Progressive Web App (PWA) support, allowing you to instal
 > **To fix this and force a full app installation:**
 > 1. Type `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (or `edge://flags` for Edge) into your browser's address bar.
 > 2. Change the setting from **Default** to **Enabled**.
-> 3. Type your exact Moonitor address (e.g., `[http://192.168.0.215:3366](http://192.168.0.215:3366)`) into the text box provided.
+> 3. Type your exact Moonitor address (e.g., `http://192.168.0.215:3366`) into the text box provided.
 > 4. Tap the **Relaunch** button to restart the browser.
 > 5. Navigate back to your Moonitor dashboard and open the menu again. The **Install** option will now be fully enabled!
 

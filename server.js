@@ -181,6 +181,20 @@ app.get('/api/printers/scan', async (req, res) => {
     res.json(foundPrinters);
 });
 
+app.get('/api/system/stats', (req, res) => {
+    const procMemory = process.memoryUsage();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+
+    res.json({
+        moonitorRss: procMemory.rss,
+        systemTotal: totalMem,
+        systemUsed: usedMem,
+        systemPct: ((usedMem / totalMem) * 100).toFixed(1)
+    });
+});
+
 server.listen(PORT, () => {
     console.log(`Moonitor server running at http://localhost:${PORT}`);
 });
