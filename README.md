@@ -12,6 +12,17 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 
 ---
 
+## Who is it for?
+
+Moonitor is built for makers and creators running multiple Klipper-based 3D printers who are tired of juggling dozens of browser tabs or trying to remember local IP addresses. Instead of bouncing between separate interfaces just to check a first layer or cancel a failed print, Moonitor pulls your entire fleet into a single, cohesive dashboard view right in your browser.
+
+Integrated network discovery automatically tracks down your machines, and everyday controls—like pausing, homing, tweaking a Z-offset, or firing off a custom macro—are instantly accessible.
+Whether you prefer a bird's-eye view, highlight mode with a bottom thumbnail strip, or an auto-cycling carousel, Moonitor adapts to how you work.
+
+Beyond core fleet control, Moonitor is packed with thoughtful touches to match your workshop workflow. Since webcams rarely align naturally in multi-printer setups, built-in camera orientation tools let you easily rotate and mirror your video feeds to match your physical enclosures. You can customize the look of your dashboard using a choice of preset themes or a fully tailored color palette, while an optional, lightweight RAM monitor gives you discreet real-time visibility into both app-specific memory and overall host system resource usage.
+
+---
+
 ## Gallery
 
 | Fully Configured Fleet Dashboard | Hover Control Overlay |
@@ -52,7 +63,9 @@ It is built on the philosophy that **individual Klipper hosts should remain loca
 
 Moonitor is built as a true thin-client. The Node.js backend exists solely to serve the static UI files and run local network discovery. All live telemetry, commands, and camera streams are handled directly between your browser and the printer's WebSockets.
 
-Because of this architecture, Moonitor has virtually zero system overhead. In real-world testing, a Moonitor service managing an active fleet of 5 printers consumes roughly **31 MB of RAM** with no memory leaks after over a month of continuous uptime. It can comfortably run directly on an existing Pi or Debian SBC alongside Klipper without impacting your print quality or host performance.
+Because of this architecture, Moonitor has virtually zero system overhead. In real-world testing, a Moonitor service managing an active fleet of 5 printers consumes roughly **35 MB of RAM** (*65 MB with 9 printers*) with no memory leaks after over a month of continuous uptime. It can comfortably run directly on an existing Pi or Debian SBC alongside Klipper without impacting your print quality or host performance. It can also be hosted on a home server.
+
+> **Note** *Running Moonitor alongside klipper on a SBC with only 512 MB of RAM is not recommended, use a host with minimum 1 GB of RAM*
 
 | Memory & Performance Benchmark |
 | :---: |
@@ -123,3 +136,7 @@ Run this command via SSH to completely remove Moonitor:
 ```bash
 curl -sSL https://raw.githubusercontent.com/Kanrog/Moonitor/main/uninstall.sh | bash
 ```
+
+**In development**
+
+Moonitor is in constant development, if you have issues, feature requests or questions, please dont be afraid to leave a ticket int the [issues tab](https://github.com/Kanrog/Moonitor/issues).
